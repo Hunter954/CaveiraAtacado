@@ -48,16 +48,3 @@ Troque essa senha assim que subir em produção.
 ## Observação
 
 Esse patch resolve o erro de tabela inexistente como `relation "product" does not exist`, porque agora o app cria as tabelas automaticamente no boot quando o banco estiver vazio.
-
-## Railway
-Use este start command no Railway:
-
-```bash
-python init_db.py && gunicorn run:app
-```
-
-Variaveis recomendadas:
-- AUTO_CREATE_DB=true
-- AUTO_SEED_DATA=true
-
-Esse fluxo garante a criacao automatica das tabelas antes de o app receber a primeira requisicao.
