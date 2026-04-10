@@ -3,7 +3,7 @@ from functools import wraps
 from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app
 from flask_login import login_required, current_user
 from ..extensions import db
-from ..models import Product, Category, ProductImage, Order, User, Coupon, HomeBanner
+from ..models import Product, Category, ProductImage, ProductVariation, Order, User, Coupon, HomeBanner
 from ..utils.helpers import slugify, allowed_file, unique_filename
 
 admin_bp = Blueprint('admin', __name__)
@@ -37,6 +37,82 @@ def dashboard():
 def products():
     products = Product.query.order_by(Product.created_at.desc()).all()
     return render_template('admin/products.html', products=products)
+
+
+def _generate_unique_product_slug(base_name):
+    base_slug = slugify(base_name)
+    candidate = base_slug
+    counter = 2
+    while Product.query.filter_by(slug=candidate).first():
+        candidate = f"{base_slug}-{counter}"
+        counter += 1
+    return candidate
+
+
+def _generate_unique_product_sku(base_sku):
+    base_sku = (base_sku or 'PRODUTO').strip()
+    candidate = f"{base_sku}-COPY"
+    counter = 2
+    while Product.query.filter_by(sku=candidate).first():
+        candidate = f"{base_sku}-COPY-{counter}"
+        counter += 1
+    return candidate
+
+
+@admin_bp.route('/products/<int:product_id>/duplicate', methods=['POST'])
+@admin_required
+def duplicate_product(product_id):
+    product = Product.query.get_or_404(product_id)
+    duplicated_product = Product(
+        category_id=product.category_id,
+        name=f"{product.name} (Cópia)",
+        slug=_generate_unique_product_slug(f"{product.name} copia"),
+        sku=_generate_unique_product_sku(product.sku),
+        short_description=product.short_description,
+        description=product.description,
+        price=product.price,
+        promotional_price=product.promotional_price,
+        stock=product.stock,
+        weight=product.weight,
+        width=product.width,
+        height=product.height,
+        length=product.length,
+        is_featured=product.is_featured,
+        is_new=product.is_new,
+        is_active=product.is_active,
+    )
+    db.session.add(duplicated_product)
+    db.session.flush()
+
+    for image in product.images:
+        db.session.add(ProductImage(
+            product_id=duplicated_product.id,
+            image_path=image.image_path,
+            alt_text=image.alt_text,
+            is_primary=image.is_primary,
+        ))
+
+    for variation in product.variations:
+        db.session.add(ProductVariation(
+            product_id=duplicated_product.id,
+            name=variation.name,
+            value=variation.value,
+            stock=variation.stock,
+        ))
+
+    db.session.commit()
+    flash('Produto duplicado com sucesso.', 'success')
+    return redirect(url_for('admin.products'))
+
+
+@admin_bp.route('/products/<int:product_id>/delete', methods=['POST'])
+@admin_required
+def delete_product(product_id):
+    product = Product.query.get_or_404(product_id)
+    db.session.delete(product)
+    db.session.commit()
+    flash('Produto excluído com sucesso.', 'info')
+    return redirect(url_for('admin.products'))
 
 
 @admin_bp.route('/products/new', methods=['GET', 'POST'])
@@ -104,14 +180,52 @@ def edit_product(product_id):
 @admin_bp.route('/categories', methods=['GET', 'POST'])
 @admin_required
 def categories():
+    editing_category = None
+
     if request.method == 'POST':
-        category = Category(name=request.form['name'], slug=slugify(request.form['name']), description=request.form.get('description'), display_order=request.form.get('display_order', 0), is_active=bool(request.form.get('is_active')))
-        db.session.add(category)
+        category_id = request.form.get('category_id')
+        if category_id:
+            editing_category = Category.query.get_or_404(category_id)
+            editing_category.name = request.form['name']
+            editing_category.slug = slugify(request.form['name'])
+            editing_category.description = request.form.get('description')
+            editing_category.display_order = request.form.get('display_order', 0)
+            editing_category.is_active = bool(request.form.get('is_active'))
+            flash('Categoria atualizada.', 'success')
+        else:
+            category = Category(
+                name=request.form['name'],
+                slug=slugify(request.form['name']),
+                description=request.form.get('description'),
+                display_order=request.form.get('display_order', 0),
+                is_active=bool(request.form.get('is_active'))
+            )
+            db.session.add(category)
+            flash('Categoria criada.', 'success')
+
         db.session.commit()
-        flash('Categoria criada.', 'success')
         return redirect(url_for('admin.categories'))
-    categories = Category.query.order_by(Category.display_order.asc()).all()
-    return render_template('admin/categories.html', categories=categories)
+
+    edit_id = request.args.get('edit', type=int)
+    if edit_id:
+        editing_category = Category.query.get_or_404(edit_id)
+
+    categories = Category.query.order_by(Category.display_order.asc(), Category.name.asc()).all()
+    return render_template('admin/categories.html', categories=categories, editing_category=editing_category)
+
+
+@admin_bp.route('/categories/<int:category_id>/delete', methods=['POST'])
+@admin_required
+def delete_category(category_id):
+    category = Category.query.get_or_404(category_id)
+    if category.products:
+        flash('Não foi possível excluir a categoria porque existem produtos vinculados a ela.', 'danger')
+        return redirect(url_for('admin.categories'))
+
+    db.session.delete(category)
+    db.session.commit()
+    flash('Categoria excluída com sucesso.', 'info')
+    return redirect(url_for('admin.categories'))
 
 
 @admin_bp.route('/orders')

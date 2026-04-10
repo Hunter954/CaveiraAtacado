@@ -1,2 +1,44 @@
 {% extends 'base.html' %}
-{% block content %}<section class="container section"><div class="checkout-layout"><form method="post" class="card form-card"><h1>Nova categoria</h1><input name="name" placeholder="Nome" required><textarea name="description" placeholder="Descrição"></textarea><input name="display_order" type="number" placeholder="Ordem"><label class="checkbox"><input type="checkbox" name="is_active" checked> Ativa</label><button class="btn btn-full">Salvar</button></form><div class="card"><h3>Lista</h3>{% for c in categories %}<p>{{ c.display_order }} · {{ c.name }}</p>{% endfor %}</div></div></section>{% endblock %}
+{% block content %}
+<section class="container section">
+  <div class="checkout-layout">
+    <form method="post" class="card form-card">
+      {% if editing_category %}
+      <input type="hidden" name="category_id" value="{{ editing_category.id }}">
+      {% endif %}
+
+      <h1>{{ 'Editar categoria' if editing_category else 'Nova categoria' }}</h1>
+      <input name="name" placeholder="Nome" value="{{ editing_category.name if editing_category else '' }}" required>
+      <textarea name="description" placeholder="Descrição">{{ editing_category.description if editing_category else '' }}</textarea>
+      <input name="display_order" type="number" placeholder="Ordem" value="{{ editing_category.display_order if editing_category else 0 }}">
+      <label class="checkbox"><input type="checkbox" name="is_active" {% if not editing_category or editing_category.is_active %}checked{% endif %}> Ativa</label>
+      <button class="btn btn-full">{{ 'Atualizar' if editing_category else 'Salvar' }}</button>
+      {% if editing_category %}
+      <a href="{{ url_for('admin.categories') }}" style="text-align:center;">Cancelar edição</a>
+      {% endif %}
+    </form>
+
+    <div class="card">
+      <h3>Lista</h3>
+      {% for c in categories %}
+      <div style="display:flex;justify-content:space-between;gap:16px;align-items:flex-start;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.08);">
+        <div>
+          <strong>{{ c.display_order }} · {{ c.name }}</strong>
+          {% if c.description %}<p style="margin:6px 0 0;">{{ c.description }}</p>{% endif %}
+        </div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;">
+          <a href="{{ url_for('admin.categories', edit=c.id) }}"><i class="bi bi-pencil-square"></i> Editar</a>
+          <form method="post" action="{{ url_for('admin.delete_category', category_id=c.id) }}" onsubmit="return confirm('Deseja excluir esta categoria?');">
+            <button type="submit" style="background:none;border:none;padding:0;color:#dc3545;cursor:pointer;">
+              <i class="bi bi-trash"></i> Excluir
+            </button>
+          </form>
+        </div>
+      </div>
+      {% else %}
+      <p>Nenhuma categoria cadastrada.</p>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}
