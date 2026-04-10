@@ -20,23 +20,15 @@
         </div>
         <div class="carousel-inner">
           {% for banner in banners %}
+          {% set target_url = banner.custom_url or (url_for('shop.catalog', category=banner.category.slug) if banner.category else url_for('shop.catalog')) %}
           <div class="carousel-item {% if loop.first %}active{% endif %}">
-            <div class="hero-banner-slide">
-              <div class="hero-copy">
-                <span class="tag">Banner rotativo</span>
-                <h1>{{ banner.title }}</h1>
-                <p>{{ banner.subtitle or 'Banner configurado pelo administrador para destacar categorias e campanhas.' }}</p>
-                {% set target_url = banner.custom_url or (url_for('shop.catalog', category=banner.category.slug) if banner.category else url_for('shop.catalog')) %}
-                <a class="btn" href="{{ target_url }}"><i class="bi bi-arrow-right-circle"></i> {{ banner.button_text or 'Ver categoria' }}</a>
-              </div>
-              <div class="banner-media">
-                {% if banner.image_path %}
-                <img src="{{ media_url(banner.image_path) }}" alt="{{ banner.title }}">
-                {% else %}
-                <div class="banner-art"></div>
-                {% endif %}
-              </div>
-            </div>
+            <a class="hero-banner-link" href="{{ target_url }}" aria-label="{{ banner.title }}">
+              {% if banner.image_path %}
+              <img src="{{ media_url(banner.image_path) }}" alt="{{ banner.title }}" class="hero-banner-image">
+              {% else %}
+              <div class="hero-banner-fallback" aria-hidden="true"></div>
+              {% endif %}
+            </a>
           </div>
           {% endfor %}
         </div>
@@ -50,15 +42,9 @@
         </button>
       </div>
       {% else %}
-      <div class="hero-banner-slide">
-        <div class="hero-copy">
-          <span class="tag">Banner rotativo</span>
-          <h1>Cadastre banners no painel</h1>
-          <p>O administrador pode definir imagem, texto, ordem e categoria de destino para cada banner da home.</p>
-          <a class="btn" href="{{ url_for('shop.catalog') }}"><i class="bi bi-arrow-right-circle"></i> Ver produtos</a>
-        </div>
-        <div class="banner-art"></div>
-      </div>
+      <a class="hero-banner-link" href="{{ url_for('shop.catalog') }}" aria-label="Ver produtos">
+        <div class="hero-banner-fallback" aria-hidden="true"></div>
+      </a>
       {% endif %}
     </div>
   </div>
