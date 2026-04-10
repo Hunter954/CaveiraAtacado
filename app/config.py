@@ -4,23 +4,23 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-def normalize_database_url(url: str) -> str:
+def _normalize_database_url(url: str) -> str:
     if not url:
         return 'sqlite:///caveira_atacado.db'
 
-    if url.startswith('postgres://'):
-        url = url.replace('postgres://', 'postgresql://', 1)
+    normalized = url.strip()
 
-    scheme = url.split('://', 1)[0]
-    if scheme == 'postgresql':
-        url = url.replace('postgresql://', 'postgresql+psycopg://', 1)
+    if normalized.startswith('postgres://'):
+        normalized = normalized.replace('postgres://', 'postgresql+psycopg://', 1)
+    elif normalized.startswith('postgresql://') and '+psycopg' not in normalized:
+        normalized = normalized.replace('postgresql://', 'postgresql+psycopg://', 1)
 
-    return url
+    return normalized
 
 
 class Config:
     SECRET_KEY = os.getenv('SECRET_KEY', 'dev-secret')
-    SQLALCHEMY_DATABASE_URI = normalize_database_url(os.getenv('DATABASE_URL', 'sqlite:///caveira_atacado.db'))
+    SQLALCHEMY_DATABASE_URI = _normalize_database_url(os.getenv('DATABASE_URL', 'sqlite:///caveira_atacado.db'))
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     UPLOAD_FOLDER = os.getenv('UPLOAD_FOLDER', 'app/static/uploads')
     MAX_CONTENT_LENGTH = int(os.getenv('MAX_CONTENT_LENGTH', 5 * 1024 * 1024))
@@ -36,3 +36,5 @@ class Config:
     MAIL_USERNAME = os.getenv('MAIL_USERNAME', '')
     MAIL_PASSWORD = os.getenv('MAIL_PASSWORD', '')
     MAIL_DEFAULT_SENDER = os.getenv('MAIL_DEFAULT_SENDER', 'no-reply@example.com')
+    AUTO_CREATE_DB = os.getenv('AUTO_CREATE_DB', 'true').lower() == 'true'
+    AUTO_SEED_DATA = os.getenv('AUTO_SEED_DATA', 'true').lower() == 'true'

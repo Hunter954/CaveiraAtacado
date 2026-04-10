@@ -7,6 +7,19 @@ from .admin.routes import admin_bp
 from .models import User, seed_data
 
 
+def bootstrap_database(app):
+    auto_create_db = app.config.get('AUTO_CREATE_DB', True)
+    auto_seed = app.config.get('AUTO_SEED_DATA', True)
+
+    if not auto_create_db:
+        return
+
+    with app.app_context():
+        db.create_all()
+        if auto_seed:
+            seed_data()
+
+
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
@@ -31,6 +44,7 @@ def create_app():
         seed_data()
         print('Dados iniciais criados com sucesso.')
 
+    bootstrap_database(app)
     return app
 
 

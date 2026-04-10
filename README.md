@@ -1,155 +1,50 @@
 # Caveira Atacado
 
-Projeto de e-commerce MVP em **Python + Flask**, com frontend em **Jinja2/HTML/CSS/JS**, banco **PostgreSQL**, integração com **Mercado Pago**, consulta de **CEP automática via ViaCEP**, painel administrativo, carrinho, checkout e estrutura pronta para deploy no **Railway**.
+Patch de deploy para Railway.
 
-## O que está incluído
+## Ajustes incluídos
 
-- Home com identidade visual preto/vermelho inspirada no layout de referência
-- Catálogo de produtos com busca, categoria e ordenação
-- Página de produto com cálculo de frete por CEP
-- Carrinho com cupom e frete
-- Checkout com criação de pedido e redirecionamento para Mercado Pago
-- Cadastro, login, logout e recuperação de senha por token
-- Área do cliente com pedidos e endereços
-- Painel administrativo para produtos, categorias, pedidos, clientes e cupons
-- Upload de imagens preparado para volume persistente
-- Seeds iniciais para catálogo e usuário administrador
+- troca do driver PostgreSQL para `psycopg[binary]`, evitando o erro de `libpq.so.5`
+- normalização automática da `DATABASE_URL` para SQLAlchemy usar `postgresql+psycopg://`
+- `Procfile` com `web: gunicorn run:app`
+- bootstrap automático do banco com `db.create_all()` no startup
+- seed inicial automática para criar categorias, produtos de exemplo e admin quando o banco estiver vazio
 
-## Stack
+## Railway
 
-- Flask
-- Flask-SQLAlchemy
-- Flask-Migrate
-- Flask-Login
-- PostgreSQL
-- Mercado Pago SDK
-- ViaCEP
-- Railway
+### Start Command
 
-## Estrutura
-
-```text
-app/
-  admin/
-  services/
-  utils/
-  templates/
-  static/
-  models.py
-  routes.py
-run.py
-requirements.txt
-.env.example
-README.md
-```
-
-## Como rodar localmente
-
-```bash
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-cp .env.example .env
-flask db init
-flask db migrate -m "initial"
-flask db upgrade
-flask seed
-python run.py
-```
-
-Acesse em `http://localhost:5000`.
-
-## Credenciais seed
-
-- Admin: `admin@caveiraatacado.com`
-- Senha: `admin123`
-
-Troque isso imediatamente em ambiente real.
-
-## Variáveis de ambiente
-
-Confira o arquivo `.env.example`. As principais são:
-
-- `SECRET_KEY`
-- `DATABASE_URL`
-- `MERCADOPAGO_ACCESS_TOKEN`
-- `MERCADOPAGO_PUBLIC_KEY`
-- `MERCADOPAGO_WEBHOOK_SECRET`
-- `UPLOAD_FOLDER`
-- `BASE_URL`
-
-## Mercado Pago
-
-O projeto está configurado para criar uma **preference** no checkout e redirecionar o usuário para o fluxo do Mercado Pago.
-
-### Observações importantes
-
-- Para produção, valide o payload do webhook com mais rigor.
-- Dependendo do produto/conta, cartão, PIX e boleto aparecem no Checkout Pro do Mercado Pago conforme a conta e configurações da integração.
-- O webhook base está em `/webhooks/mercado-pago`.
-- Recomenda-se complementar a rotina de sincronização com consulta da API do Mercado Pago no webhook para confirmação robusta do status.
-
-## CEP automático
-
-O preenchimento automático usa ViaCEP no endpoint interno:
-
-- `GET /api/cep/<cep>`
-
-O JavaScript preenche rua, bairro, cidade e UF automaticamente em checkout e endereços.
-
-## Imagens em volume no Railway
-
-Configure um volume e aponte `UPLOAD_FOLDER` para o diretório persistente montado, por exemplo:
-
-```env
-UPLOAD_FOLDER=/data/uploads
-```
-
-No Railway:
-
-1. Crie o volume.
-2. Monte o volume no serviço web.
-3. Defina a variável `UPLOAD_FOLDER` apontando para o path persistente.
-4. Garanta permissão de escrita no diretório.
-
-## PostgreSQL no Railway
-
-Use a `DATABASE_URL` fornecida pelo plugin do Postgres. Se ela vier como `postgresql://...`, o projeto agora converte automaticamente para `postgresql+psycopg://...`, evitando o problema do driver `psycopg2/libpq` no Railway.
-
-## GitHub e deploy
-
-1. Suba o projeto para um repositório.
-2. Conecte o repositório ao Railway.
-3. Adicione as variáveis de ambiente.
-4. O projeto agora inclui um `Procfile` com o start command abaixo, então o Railway costuma detectar sozinho. Se precisar preencher manualmente, use:
+Se o Railway pedir start command manual, use:
 
 ```bash
 gunicorn run:app
 ```
 
-5. Rode as migrations no ambiente.
+### Variáveis de ambiente mínimas
 
-## Pontos para evoluir depois
+- `SECRET_KEY`
+- `DATABASE_URL`
+- `UPLOAD_FOLDER`
+- `BASE_URL`
+- `MERCADOPAGO_ACCESS_TOKEN`
+- `MERCADOPAGO_PUBLIC_KEY`
 
-- permissões admin por papel
-- cálculo de frete real por transportadora/correios
-- consulta robusta do webhook Mercado Pago
-- lista de desejos
-- avaliações
-- CMS institucional
-- emissão fiscal e ERP
+### Variáveis novas deste patch
 
-## Limitações conhecidas deste MVP
+- `AUTO_CREATE_DB=true`
+- `AUTO_SEED_DATA=true`
 
-Este pacote entrega uma base funcional e organizada para subir no GitHub e evoluir. Ainda assim, para operação em produção com alto volume, vale reforçar:
+Essas duas opções permitem que o projeto suba no Railway mesmo sem rodar migration manual. Na primeira inicialização, as tabelas são criadas automaticamente.
 
-- validações avançadas de formulário
-- antifraude e regras de pagamento
-- observabilidade/logging centralizado
-- testes automatizados
-- revisão de segurança e LGPD operacional
+## Login admin inicial
 
+Quando `AUTO_SEED_DATA=true`, o sistema cria:
 
-## Patch Railway aplicado
+- usuário: `admin@caveiraatacado.com`
+- senha: `admin123`
 
-Este patch troca o driver de banco para `psycopg` v3 com binário embutido e normaliza a `DATABASE_URL` para `postgresql+psycopg://`, evitando o erro `ImportError: libpq.so.5` no boot do Railway.
+Troque essa senha assim que subir em produção.
+
+## Observação
+
+Esse patch resolve o erro de tabela inexistente como `relation "product" does not exist`, porque agora o app cria as tabelas automaticamente no boot quando o banco estiver vazio.
