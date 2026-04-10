@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify, current_app
 from flask_login import login_user, logout_user, login_required, current_user
 from .extensions import db
-from .models import User, Category, Product, ProductImage, Cart, CartItem, Coupon, Order, OrderItem, UserAddress, PasswordReset, OrderStatusLog
+from .models import User, Category, Product, ProductImage, Cart, CartItem, Coupon, Order, OrderItem, UserAddress, PasswordReset, OrderStatusLog, HomeBanner
 from .services.shipping_service import calculate_shipping
 from .services.cep_service import lookup_cep
 from .services.payment_service import MercadoPagoService, update_payment_from_webhook
