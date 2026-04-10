@@ -2,6 +2,7 @@ import os
 from functools import wraps
 from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app
 from flask_login import login_required, current_user
+from sqlalchemy.exc import IntegrityError
 from ..extensions import db
 from ..models import Product, Category, ProductImage, ProductVariation, Order, User, Coupon, HomeBanner
 from ..utils.helpers import slugify, allowed_file, unique_filename
@@ -57,6 +58,34 @@ def _generate_unique_product_sku(base_sku):
         candidate = f"{base_sku}-COPY-{counter}"
         counter += 1
     return candidate
+
+
+
+def _save_product_images(product, uploaded_files, replace_existing=False):
+    valid_files = [file for file in uploaded_files if file and file.filename and allowed_file(file.filename)]
+    if not valid_files:
+        return False
+
+    if replace_existing:
+        for image in list(product.images):
+            db.session.delete(image)
+        db.session.flush()
+    else:
+        for image in product.images:
+            image.is_primary = False
+
+    for index, file in enumerate(valid_files):
+        filename = unique_filename(file.filename)
+        save_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
+        file.save(save_path)
+        db.session.add(ProductImage(
+            product_id=product.id,
+            image_path='/' + save_path.replace('app/', ''),
+            alt_text=product.name,
+            is_primary=(index == 0),
+        ))
+
+    return True
 
 
 @admin_bp.route('/products/<int:product_id>/duplicate', methods=['POST'])
@@ -129,11 +158,11 @@ def new_product():
             description=request.form.get('description'),
             price=request.form['price'],
             promotional_price=request.form.get('promotional_price') or None,
-            stock=request.form.get('stock', 0),
-            weight=request.form.get('weight', 0),
-            width=request.form.get('width', 0),
-            height=request.form.get('height', 0),
-            length=request.form.get('length', 0),
+            stock=request.form.get('stock', 0) or 0,
+            weight=request.form.get('weight', 0) or 0,
+            width=request.form.get('width', 0) or 0,
+            height=request.form.get('height', 0) or 0,
+            length=request.form.get('length', 0) or 0,
             is_featured=bool(request.form.get('is_featured')),
             is_new=bool(request.form.get('is_new')),
             is_active=bool(request.form.get('is_active')),
@@ -141,12 +170,7 @@ def new_product():
         db.session.add(product)
         db.session.flush()
 
-        for file in request.files.getlist('images'):
-            if file and allowed_file(file.filename):
-                filename = unique_filename(file.filename)
-                save_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
-                file.save(save_path)
-                db.session.add(ProductImage(product_id=product.id, image_path='/' + save_path.replace('app/', ''), is_primary=False))
+        _save_product_images(product, request.files.getlist('images'))
         db.session.commit()
         flash('Produto cadastrado com sucesso.', 'success')
         return redirect(url_for('admin.products'))
@@ -167,10 +191,18 @@ def edit_product(product_id):
         product.description = request.form.get('description')
         product.price = request.form['price']
         product.promotional_price = request.form.get('promotional_price') or None
-        product.stock = request.form.get('stock', 0)
+        product.stock = request.form.get('stock', 0) or 0
+        product.weight = request.form.get('weight', 0) or 0
+        product.width = request.form.get('width', 0) or 0
+        product.height = request.form.get('height', 0) or 0
+        product.length = request.form.get('length', 0) or 0
         product.is_featured = bool(request.form.get('is_featured'))
         product.is_new = bool(request.form.get('is_new'))
         product.is_active = bool(request.form.get('is_active'))
+
+        if request.files.getlist('images'):
+            _save_product_images(product, request.files.getlist('images'), replace_existing=True)
+
         db.session.commit()
         flash('Produto atualizado.', 'success')
         return redirect(url_for('admin.products'))
@@ -218,12 +250,24 @@ def categories():
 @admin_required
 def delete_category(category_id):
     category = Category.query.get_or_404(category_id)
+
     if category.products:
         flash('Não foi possível excluir a categoria porque existem produtos vinculados a ela.', 'danger')
         return redirect(url_for('admin.categories'))
 
-    db.session.delete(category)
-    db.session.commit()
+    linked_banners = HomeBanner.query.filter_by(category_id=category.id).count()
+    if linked_banners:
+        flash('Não foi possível excluir a categoria porque existem banners vinculados a ela.', 'danger')
+        return redirect(url_for('admin.categories'))
+
+    try:
+        db.session.delete(category)
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        flash('Não foi possível excluir a categoria porque ela ainda possui vínculos no sistema.', 'danger')
+        return redirect(url_for('admin.categories'))
+
     flash('Categoria excluída com sucesso.', 'info')
     return redirect(url_for('admin.categories'))
 
