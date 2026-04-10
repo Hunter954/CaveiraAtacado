@@ -22,6 +22,9 @@ class Config:
     SECRET_KEY = os.getenv('SECRET_KEY', 'dev-secret')
     SQLALCHEMY_DATABASE_URI = _normalize_database_url(os.getenv('DATABASE_URL', 'sqlite:///caveira_atacado.db'))
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        'pool_pre_ping': True,
+    }
     UPLOAD_FOLDER = os.getenv('UPLOAD_FOLDER', 'app/static/uploads')
     MAX_CONTENT_LENGTH = int(os.getenv('MAX_CONTENT_LENGTH', 5 * 1024 * 1024))
     MERCADOPAGO_ACCESS_TOKEN = os.getenv('MERCADOPAGO_ACCESS_TOKEN', '')

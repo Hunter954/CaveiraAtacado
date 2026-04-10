@@ -1,10 +1,14 @@
+import logging
 import os
 from flask import Flask
+from sqlalchemy import inspect
 from .config import Config
 from .extensions import db, migrate, login_manager, mail
 from .routes import core_bp, auth_bp, shop_bp, cart_bp, checkout_bp, user_bp, webhook_bp
 from .admin.routes import admin_bp
 from .models import User, seed_data
+
+logger = logging.getLogger(__name__)
 
 
 def bootstrap_database(app):
@@ -12,12 +16,32 @@ def bootstrap_database(app):
     auto_seed = app.config.get('AUTO_SEED_DATA', True)
 
     if not auto_create_db:
+        logger.info('AUTO_CREATE_DB=false; pulando inicializacao do banco.')
         return
 
     with app.app_context():
-        db.create_all()
+        # Garante que todos os models estejam registrados no metadata antes do create_all.
+        from . import models  # noqa: F401
+
+        inspector = inspect(db.engine)
+        existing_tables = set(inspector.get_table_names())
+        expected_tables = set(db.metadata.tables.keys())
+        missing_tables = expected_tables.difference(existing_tables)
+
+        if missing_tables:
+            logger.info('Criando tabelas ausentes: %s', ', '.join(sorted(missing_tables)))
+            db.create_all()
+        else:
+            logger.info('Todas as tabelas ja existem no banco.')
+
         if auto_seed:
-            seed_data()
+            try:
+                seed_data()
+                logger.info('Seed inicial verificado/aplicado com sucesso.')
+            except Exception:
+                logger.exception('Falha ao aplicar seed inicial.')
+                db.session.rollback()
+                raise
 
 
 def create_app():
