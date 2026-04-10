@@ -30,13 +30,13 @@
     <aside class="card order-summary">
       <h3>Resumo do pedido</h3>
       {% for item in cart.items %}
-      <p>{{ item.product.name }} x {{ item.quantity }} <strong>R$ {{ '%.2f'|format(item.total_price()) }}</strong></p>
+      <p>{{ item.product.name }} x {{ item.quantity }} <strong>R$ {{ item.total_price()|brl_currency }}</strong></p>
       {% endfor %}
       <hr>
-      <p>Subtotal: <strong>R$ {{ '%.2f'|format(cart.subtotal()) }}</strong></p>
-      <p>Desconto: <strong>R$ {{ '%.2f'|format(cart.discount_amount()) }}</strong></p>
-      <p>Frete: <strong>R$ {{ '%.2f'|format(shipping.price if shipping else 0) }}</strong></p>
-      <p>Total: <strong>R$ {{ '%.2f'|format(cart.total(shipping.price if shipping else 0)) }}</strong></p>
+      <p>Subtotal: <strong>R$ {{ cart.subtotal()|brl_currency }}</strong></p>
+      <p>Desconto: <strong>R$ {{ cart.discount_amount()|brl_currency }}</strong></p>
+      <p>Frete: <strong>R$ {{ (shipping.price if shipping else 0)|brl_currency }}</strong></p>
+      <p>Total: <strong>R$ {{ cart.total(shipping.price if shipping else 0)|brl_currency }}</strong></p>
       <p>Pagamento via <strong>Mercado Pago</strong> (PIX, cartão e boleto conforme disponibilidade da conta).</p>
       <button class="btn btn-full">Criar pedido e seguir para pagamento</button>
     </aside>

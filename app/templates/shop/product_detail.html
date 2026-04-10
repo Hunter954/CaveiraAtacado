@@ -10,8 +10,8 @@
     <h1>{{ product.name }}</h1>
     <p>{{ product.description }}</p>
     <div class="price-wrap detail-price">
-      <strong>R$ {{ '%.2f'|format(product.final_price) }}</strong>
-      {% if product.promotional_price %}<span>R$ {{ '%.2f'|format(product.price) }}</span>{% endif %}
+      <strong>R$ {{ product.final_price|brl_currency }}</strong>
+      {% if product.promotional_price %}<span>R$ {{ product.price|brl_currency }}</span>{% endif %}
     </div>
     <p>Estoque disponível: {{ product.stock }}</p>
     <form method="post" action="{{ url_for('cart.add_to_cart', product_id=product.id) }}">
@@ -34,7 +34,7 @@
       <div class="card nested-card">
         <p>{{ shipping_result.street }} - {{ shipping_result.city }}/{{ shipping_result.state }}</p>
         {% for opt in shipping_result.shipping_options %}
-        <p>{{ opt.method }} · R$ {{ '%.2f'|format(opt.price) }} · {{ opt.days }} dias úteis</p>
+        <p>{{ opt.method }} · R$ {{ opt.price|brl_currency }} · {{ opt.days }} dias úteis</p>
         {% endfor %}
       </div>
       {% endif %}

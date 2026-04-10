@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
 {% block title %}Pedido #{{ order.id }} | Caveira Atacado{% endblock %}
 {% block content %}
-<section class="container section narrow"><div class="card"><h1>Pedido #{{ order.id }}</h1><p>Status: <strong>{{ order.status }}</strong></p><p>Pagamento: <strong>{{ order.payment_status }}</strong></p><p>Frete: {{ order.shipping_method }} · R$ {{ '%.2f'|format(order.shipping_cost) }}</p><h3>Itens</h3>{% for item in order.items %}<p>{{ item.product_name }} x {{ item.quantity }} — R$ {{ '%.2f'|format(item.total_price) }}</p>{% endfor %}</div></section>
+<section class="container section narrow"><div class="card"><h1>Pedido #{{ order.id }}</h1><p>Status: <strong>{{ order.status }}</strong></p><p>Pagamento: <strong>{{ order.payment_status }}</strong></p><p>Frete: {{ order.shipping_method }} · R$ {{ order.shipping_cost|brl_currency }}</p><h3>Itens</h3>{% for item in order.items %}<p>{{ item.product_name }} x {{ item.quantity }} — R$ {{ item.total_price|brl_currency }}</p>{% endfor %}</div></section>
 {% endblock %}

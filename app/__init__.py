@@ -44,6 +44,15 @@ def bootstrap_database(app):
                 raise
 
 
+def brl_currency(value):
+    try:
+        number = float(value or 0)
+    except (TypeError, ValueError):
+        number = 0.0
+    formatted = f"{number:,.2f}"
+    return formatted.replace(',', 'X').replace('.', ',').replace('X', '.')
+
+
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
@@ -53,6 +62,7 @@ def create_app():
     migrate.init_app(app, db)
     login_manager.init_app(app)
     mail.init_app(app)
+    app.jinja_env.filters['brl_currency'] = brl_currency
 
     app.register_blueprint(core_bp)
     app.register_blueprint(auth_bp, url_prefix='/auth')

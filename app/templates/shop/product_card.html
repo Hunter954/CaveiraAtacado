@@ -4,10 +4,10 @@
   <h3>{{ product.name }}</h3>
   <p>{{ product.short_description or product.description[:80] }}</p>
   <div class="price-wrap">
-    <strong>R$ {{ '%.2f'|format(product.final_price) }}</strong>
-    {% if product.promotional_price %}<span>R$ {{ '%.2f'|format(product.price) }}</span>{% endif %}
+    <strong>R$ {{ product.final_price|brl_currency }}</strong>
+    {% if product.promotional_price %}<span>R$ {{ product.price|brl_currency }}</span>{% endif %}
   </div>
   <form method="post" action="{{ url_for('cart.add_to_cart', product_id=product.id) }}">
-    <button class="btn btn-full"><i class="bi bi-cart-plus"></i> Adicionar ao carrinho</button>
+    <button class="btn btn-full product-card-button" aria-label="Adicionar {{ product.name }} ao carrinho"><i class="bi bi-cart-plus"></i><span class="product-card-button-label">Adicionar ao carrinho</span></button>
   </form>
 </div>
