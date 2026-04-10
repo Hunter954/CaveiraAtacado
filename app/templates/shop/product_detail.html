@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% block title %}{{ product.name }} | Caveira Atacado{% endblock %}
+{% block content %}
+<section class="container section product-detail-grid">
+  <div class="card">
+    <img class="product-main-image" src="{{ product.images[0].image_path if product.images else 'https://placehold.co/700x700/111111/ff2a2a?text=Caveira' }}" alt="{{ product.name }}">
+  </div>
+  <div class="card">
+    <span class="tag">SKU {{ product.sku }}</span>
+    <h1>{{ product.name }}</h1>
+    <p>{{ product.description }}</p>
+    <div class="price-wrap detail-price">
+      <strong>R$ {{ '%.2f'|format(product.final_price) }}</strong>
+      {% if product.promotional_price %}<span>R$ {{ '%.2f'|format(product.price) }}</span>{% endif %}
+    </div>
+    <p>Estoque disponível: {{ product.stock }}</p>
+    <form method="post" action="{{ url_for('cart.add_to_cart', product_id=product.id) }}">
+      <div class="inline-fields">
+        <input type="number" name="quantity" min="1" value="1">
+        <button class="btn">Adicionar ao carrinho</button>
+      </div>
+    </form>
+    <form method="post" class="shipping-box">
+      <label>Calcular frete por CEP</label>
+      <div class="inline-fields">
+        <input type="text" name="zipcode" placeholder="00000-000">
+        <button class="btn btn-secondary">Calcular</button>
+      </div>
+    </form>
+    {% if shipping_result %}
+      {% if shipping_result.error %}
+      <p class="flash danger">{{ shipping_result.error }}</p>
+      {% else %}
+      <div class="card nested-card">
+        <p>{{ shipping_result.street }} - {{ shipping_result.city }}/{{ shipping_result.state }}</p>
+        {% for opt in shipping_result.shipping_options %}
+        <p>{{ opt.method }} · R$ {{ '%.2f'|format(opt.price) }} · {{ opt.days }} dias úteis</p>
+        {% endfor %}
+      </div>
+      {% endif %}
+    {% endif %}
+  </div>
+</section>
+
+<section class="container section">
+  <div class="section-head"><h2>Produtos relacionados</h2></div>
+  <div class="product-grid">
+    {% for product in related_products %}
+      {% include 'shop/product_card.html' %}
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

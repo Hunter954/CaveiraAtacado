@@ -1,0 +1,5 @@
+{% extends 'base.html' %}
+{% block title %}Minha conta | Caveira Atacado{% endblock %}
+{% block content %}
+<section class="container section"><div class="section-head"><h1>Minha conta</h1><a href="{{ url_for('user.addresses') }}">Meus endereços</a></div><div class="card"><h3>Pedidos</h3>{% for order in orders %}<div class="order-line"><span>#{{ order.id }}</span><span>{{ order.status }}</span><strong>R$ {{ '%.2f'|format(order.total_amount) }}</strong><a href="{{ url_for('user.order_detail', order_id=order.id) }}">Detalhes</a></div>{% else %}<p>Você ainda não possui pedidos.</p>{% endfor %}</div></section>
+{% endblock %}

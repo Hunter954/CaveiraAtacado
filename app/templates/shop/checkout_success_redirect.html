@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block title %}Redirecionando | Caveira Atacado{% endblock %}
+{% block content %}
+<section class="container section narrow">
+  <div class="card center-text">
+    <h1>Pedido #{{ order.id }} criado com sucesso</h1>
+    <p>Você será redirecionado para o Mercado Pago.</p>
+    {% if preference.init_point %}
+    <a class="btn" href="{{ preference.init_point }}">Ir para pagamento</a>
+    {% else %}
+    <a class="btn" href="{{ url_for('checkout.confirmation', order_id=order.id) }}">Ver pedido</a>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

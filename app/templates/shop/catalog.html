@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block title %}Catálogo | Caveira Atacado{% endblock %}
+{% block content %}
+<section class="container section">
+  <div class="section-head"><h1>Catálogo de Produtos</h1></div>
+  <form class="filters card" method="get">
+    <input type="text" name="q" value="{{ query or '' }}" placeholder="Buscar por nome ou SKU">
+    <select name="category">
+      <option value="">Todas as categorias</option>
+      {% for category in nav_categories %}
+      <option value="{{ category.slug }}" {% if current_category and current_category.slug == category.slug %}selected{% endif %}>{{ category.name }}</option>
+      {% endfor %}
+    </select>
+    <select name="sort">
+      <option value="recent">Mais recentes</option>
+      <option value="price_asc">Menor preço</option>
+      <option value="price_desc">Maior preço</option>
+    </select>
+    <button class="btn">Filtrar</button>
+  </form>
+  <div class="product-grid">
+    {% for product in products %}
+      {% include 'shop/product_card.html' %}
+    {% else %}
+      <p>Nenhum produto encontrado.</p>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

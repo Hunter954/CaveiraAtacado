@@ -1,0 +1,4 @@
+Use Flask-Migrate para gerar as migrations reais do ambiente:
+flask db init
+flask db migrate -m "initial"
+flask db upgrade

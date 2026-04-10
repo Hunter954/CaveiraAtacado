@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block title %}Pedido #{{ order.id }} | Caveira Atacado{% endblock %}
+{% block content %}
+<section class="container section narrow">
+  <div class="card">
+    <h1>Pedido #{{ order.id }}</h1>
+    <p>Status do pedido: <strong>{{ order.status }}</strong></p>
+    <p>Status do pagamento: <strong>{{ order.payment_status }}</strong></p>
+    <p>Total: <strong>R$ {{ '%.2f'|format(order.total_amount) }}</strong></p>
+    <p>Entrega: {{ order.street }}, {{ order.number }} - {{ order.city }}/{{ order.state }}</p>
+    <a class="btn" href="{{ url_for('user.order_detail', order_id=order.id) }}">Acompanhar pedido</a>
+  </div>
+</section>
+{% endblock %}

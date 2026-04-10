@@ -1,0 +1,5 @@
+{% extends 'base.html' %}
+{% block title %}Endereços | Caveira Atacado{% endblock %}
+{% block content %}
+<section class="container section"><div class="checkout-layout"><form method="post" class="card form-card"><h1>Novo endereço</h1><input name="recipient_name" placeholder="Nome do destinatário" required><input data-cep name="zipcode" placeholder="CEP" required><input data-street name="street" placeholder="Rua" required><input name="number" placeholder="Número" required><input name="complement" placeholder="Complemento"><input data-neighborhood name="neighborhood" placeholder="Bairro"><input data-city name="city" placeholder="Cidade" required><input data-state name="state" placeholder="UF" required><input name="reference" placeholder="Referência"><button class="btn btn-full">Salvar endereço</button></form><div class="card"><h3>Endereços salvos</h3>{% for address in current_user.addresses %}<p>{{ address.street }}, {{ address.number }} - {{ address.city }}/{{ address.state }}</p>{% else %}<p>Nenhum endereço cadastrado.</p>{% endfor %}</div></div></section>
+{% endblock %}

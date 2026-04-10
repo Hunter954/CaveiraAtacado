@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block title %}Checkout | Caveira Atacado{% endblock %}
+{% block content %}
+<section class="container section">
+  <div class="section-head"><h1>Checkout</h1></div>
+  <form method="post" class="checkout-layout">
+    <div class="card">
+      <h3>Endereço de entrega</h3>
+      {% if addresses %}
+      <label>Escolha um endereço salvo</label>
+      <select name="address_id">
+        <option value="">Novo endereço</option>
+        {% for address in addresses %}
+        <option value="{{ address.id }}">{{ address.street }}, {{ address.number }} - {{ address.city }}/{{ address.state }}</option>
+        {% endfor %}
+      </select>
+      {% endif %}
+      <div class="grid-2">
+        <input data-cep name="zipcode" placeholder="CEP">
+        <input data-street name="street" placeholder="Rua">
+        <input name="number" placeholder="Número">
+        <input name="complement" placeholder="Complemento">
+        <input data-neighborhood name="neighborhood" placeholder="Bairro">
+        <input data-city name="city" placeholder="Cidade">
+        <input data-state name="state" placeholder="UF">
+        <input name="reference" placeholder="Referência">
+      </div>
+      <p class="hint">Ao digitar o CEP, o endereço será preenchido automaticamente.</p>
+    </div>
+    <aside class="card order-summary">
+      <h3>Resumo do pedido</h3>
+      {% for item in cart.items %}
+      <p>{{ item.product.name }} x {{ item.quantity }} <strong>R$ {{ '%.2f'|format(item.total_price()) }}</strong></p>
+      {% endfor %}
+      <hr>
+      <p>Subtotal: <strong>R$ {{ '%.2f'|format(cart.subtotal()) }}</strong></p>
+      <p>Desconto: <strong>R$ {{ '%.2f'|format(cart.discount_amount()) }}</strong></p>
+      <p>Frete: <strong>R$ {{ '%.2f'|format(shipping.price if shipping else 0) }}</strong></p>
+      <p>Total: <strong>R$ {{ '%.2f'|format(cart.total(shipping.price if shipping else 0)) }}</strong></p>
+      <p>Pagamento via <strong>Mercado Pago</strong> (PIX, cartão e boleto conforme disponibilidade da conta).</p>
+      <button class="btn btn-full">Criar pedido e seguir para pagamento</button>
+    </aside>
+  </form>
+</section>
+{% endblock %}

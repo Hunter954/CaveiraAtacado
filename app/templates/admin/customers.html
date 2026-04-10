@@ -1,0 +1,2 @@
+{% extends 'base.html' %}
+{% block content %}<section class="container section"><div class="section-head"><h1>Clientes</h1></div><div class="card table-wrap"><table><tr><th>Nome</th><th>E-mail</th><th>Telefone</th></tr>{% for c in customers %}<tr><td>{{ c.full_name }}</td><td>{{ c.email }}</td><td>{{ c.phone }}</td></tr>{% endfor %}</table></div></section>{% endblock %}

@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block title %}Carrinho | Caveira Atacado{% endblock %}
+{% block content %}
+<section class="container section">
+  <div class="section-head"><h1>Seu carrinho</h1></div>
+  <div class="checkout-layout">
+    <div>
+      {% for item in cart.items %}
+      <div class="card cart-item">
+        <div>
+          <h3>{{ item.product.name }}</h3>
+          <p>SKU: {{ item.product.sku }}</p>
+          <strong>R$ {{ '%.2f'|format(item.product.final_price) }}</strong>
+        </div>
+        <form method="post" action="{{ url_for('cart.update_cart_item', item_id=item.id) }}" class="inline-fields">
+          <input type="number" min="1" name="quantity" value="{{ item.quantity }}">
+          <button class="btn btn-secondary">Atualizar</button>
+        </form>
+        <form method="post" action="{{ url_for('cart.remove_cart_item', item_id=item.id) }}">
+          <button class="btn btn-danger">Remover</button>
+        </form>
+      </div>
+      {% else %}
+      <div class="card"><p>Seu carrinho está vazio.</p></div>
+      {% endfor %}
+    </div>
+    <aside class="card order-summary">
+      <h3>Resumo</h3>
+      <p>Subtotal: <strong>R$ {{ '%.2f'|format(cart.subtotal()) }}</strong></p>
+      <p>Desconto: <strong>R$ {{ '%.2f'|format(cart.discount_amount()) }}</strong></p>
+      <p>Frete: <strong>R$ {{ '%.2f'|format(shipping.price if shipping else 0) }}</strong></p>
+      <p>Total: <strong>R$ {{ '%.2f'|format(cart.total(shipping.price if shipping else 0)) }}</strong></p>
+      <form method="post" action="{{ url_for('cart.apply_coupon') }}">
+        <input type="text" name="coupon_code" placeholder="Cupom">
+        <button class="btn btn-secondary btn-full">Aplicar cupom</button>
+      </form>
+      <form method="post" action="{{ url_for('cart.calculate_cart_shipping') }}">
+        <input type="text" name="zipcode" placeholder="CEP">
+        <button class="btn btn-secondary btn-full">Calcular frete</button>
+      </form>
+      <a class="btn btn-full" href="{{ url_for('checkout.index') }}">Ir para checkout</a>
+    </aside>
+  </div>
+</section>
+{% endblock %}

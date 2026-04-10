@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% block title %}Caveira Atacado{% endblock %}
+{% block content %}
+<section class="hero">
+  <div class="container hero-grid">
+    <aside class="hero-categories card">
+      <h3>Categorias</h3>
+      {% for category in categories %}
+      <a href="{{ url_for('shop.catalog', category=category.slug) }}">{{ category.name }}</a>
+      {% endfor %}
+    </aside>
+    <div class="hero-banner card">
+      <div>
+        <span class="tag">Destaque</span>
+        <h1>Até 10% OFF em ofertas da semana</h1>
+        <p>Layout inspirado no print enviado, com identidade forte em preto e vermelho.</p>
+        <a class="btn" href="{{ url_for('shop.catalog') }}">Comprar agora</a>
+      </div>
+      <div class="banner-art"></div>
+    </div>
+  </div>
+</section>
+
+<section class="container section">
+  <div class="section-head"><h2>Flash Sales</h2><a href="{{ url_for('shop.catalog') }}">Ver todos</a></div>
+  <div class="product-grid">
+    {% for product in featured_products %}
+      {% include 'shop/product_card.html' %}
+    {% endfor %}
+  </div>
+</section>
+
+<section class="container section categories-row">
+  <div class="section-head"><h2>Browse by category</h2></div>
+  <div class="category-grid">
+    {% for category in categories %}
+      <a class="mini-card" href="{{ url_for('shop.catalog', category=category.slug) }}">{{ category.name }}</a>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="container promo-wide card">
+  <div>
+    <span class="tag green">Coleção</span>
+    <h2>Enhance your music experience</h2>
+    <p>Banner secundário inspirado na referência, com foco em venda e conversão.</p>
+    <a class="btn" href="{{ url_for('shop.catalog') }}">Ver produtos</a>
+  </div>
+</section>
+
+<section class="container section">
+  <div class="section-head"><h2>Novidades</h2></div>
+  <div class="product-grid">
+    {% for product in new_products %}
+      {% include 'shop/product_card.html' %}
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}
