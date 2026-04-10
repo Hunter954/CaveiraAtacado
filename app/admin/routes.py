@@ -3,7 +3,7 @@ from functools import wraps
 from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app
 from flask_login import login_required, current_user
 from ..extensions import db
-from ..models import Product, Category, ProductImage, Order, User, Coupon
+from ..models import Product, Category, ProductImage, Order, User, Coupon, HomeBanner
 from ..utils.helpers import slugify, allowed_file, unique_filename
 
 admin_bp = Blueprint('admin', __name__)
@@ -149,3 +149,74 @@ def coupons():
         return redirect(url_for('admin.coupons'))
     coupons = Coupon.query.order_by(Coupon.created_at.desc()).all()
     return render_template('admin/coupons.html', coupons=coupons)
+
+
+@admin_bp.route('/banners', methods=['GET', 'POST'])
+@admin_required
+def banners():
+    categories = Category.query.order_by(Category.name.asc()).all()
+    if request.method == 'POST':
+        image_path = request.form.get('existing_image_path') or ''
+        file = request.files.get('image')
+        if file and allowed_file(file.filename):
+            filename = unique_filename(file.filename)
+            save_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
+            file.save(save_path)
+            image_path = '/' + save_path.replace('app/', '')
+
+        banner = HomeBanner(
+            title=request.form['title'],
+            subtitle=request.form.get('subtitle'),
+            button_text=request.form.get('button_text') or 'Ver categoria',
+            custom_url=request.form.get('custom_url') or None,
+            image_path=image_path or None,
+            display_order=request.form.get('display_order', 0),
+            is_active=bool(request.form.get('is_active')),
+            category_id=request.form.get('category_id') or None,
+        )
+        db.session.add(banner)
+        db.session.commit()
+        flash('Banner criado com sucesso.', 'success')
+        return redirect(url_for('admin.banners'))
+
+    banners = HomeBanner.query.order_by(HomeBanner.display_order.asc(), HomeBanner.created_at.desc()).all()
+    return render_template('admin/banners.html', banners=banners, categories=categories)
+
+
+@admin_bp.route('/banners/<int:banner_id>/edit', methods=['GET', 'POST'])
+@admin_required
+def edit_banner(banner_id):
+    banner = HomeBanner.query.get_or_404(banner_id)
+    categories = Category.query.order_by(Category.name.asc()).all()
+    if request.method == 'POST':
+        file = request.files.get('image')
+        if file and allowed_file(file.filename):
+            filename = unique_filename(file.filename)
+            save_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
+            file.save(save_path)
+            banner.image_path = '/' + save_path.replace('app/', '')
+        else:
+            banner.image_path = request.form.get('existing_image_path') or banner.image_path
+
+        banner.title = request.form['title']
+        banner.subtitle = request.form.get('subtitle')
+        banner.button_text = request.form.get('button_text') or 'Ver categoria'
+        banner.custom_url = request.form.get('custom_url') or None
+        banner.display_order = request.form.get('display_order', 0)
+        banner.is_active = bool(request.form.get('is_active'))
+        banner.category_id = request.form.get('category_id') or None
+        db.session.commit()
+        flash('Banner atualizado.', 'success')
+        return redirect(url_for('admin.banners'))
+
+    return render_template('admin/banner_form.html', banner=banner, categories=categories)
+
+
+@admin_bp.route('/banners/<int:banner_id>/delete', methods=['POST'])
+@admin_required
+def delete_banner(banner_id):
+    banner = HomeBanner.query.get_or_404(banner_id)
+    db.session.delete(banner)
+    db.session.commit()
+    flash('Banner removido.', 'info')
+    return redirect(url_for('admin.banners'))

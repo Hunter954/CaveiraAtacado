@@ -4,34 +4,47 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}Caveira Atacado{% endblock %}</title>
-  <meta name="description" content="Caveira Atacado - e-commerce em Flask com identidade preto e vermelho.">
+  <meta name="description" content="Caveira Atacado - atacado com identidade forte e layout claro.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
 <header class="topbar">
   <div class="container header-inner">
-    <a class="logo" href="{{ url_for('core.home') }}">Caveira<span>Atacado</span></a>
+    <a class="logo" href="{{ url_for('core.home') }}" aria-label="Caveira Atacado">
+      <img src="{{ url_for('static', filename='img/logo.svg') }}" alt="Caveira Atacado">
+    </a>
+
     <nav class="nav">
-      <a href="{{ url_for('core.home') }}">Home</a>
-      <a href="{{ url_for('shop.catalog') }}">Produtos</a>
-      <a href="{{ url_for('core.institutional', page='sobre') }}">Sobre</a>
-      <a href="{{ url_for('core.institutional', page='contato') }}">Contato</a>
+      <div class="dropdown">
+        <button class="btn btn-nav dropdown-toggle" data-bs-toggle="dropdown" type="button">
+          <i class="bi bi-grid"></i> Categorias
+        </button>
+        <ul class="dropdown-menu dropdown-menu-dark category-menu">
+          {% for category in nav_categories %}
+          <li><a class="dropdown-item" href="{{ url_for('shop.catalog', category=category.slug) }}">{{ category.name }}</a></li>
+          {% endfor %}
+        </ul>
+      </div>
     </nav>
+
     <form class="searchbar" action="{{ url_for('core.search') }}">
       <input type="text" name="q" placeholder="Buscar produtos...">
     </form>
+
     <div class="header-actions">
       {% if current_user.is_authenticated %}
-      <a href="{{ url_for('user.dashboard') }}">Minha conta</a>
-      {% if current_user.is_admin %}<a href="{{ url_for('admin.dashboard') }}">Admin</a>{% endif %}
-      <a href="{{ url_for('auth.logout') }}">Sair</a>
+      <a href="{{ url_for('user.dashboard') }}"><i class="bi bi-person-circle"></i> Minha conta</a>
+      {% if current_user.is_admin %}<a href="{{ url_for('admin.dashboard') }}"><i class="bi bi-speedometer2"></i> Admin</a>{% endif %}
+      <a href="{{ url_for('auth.logout') }}"><i class="bi bi-box-arrow-right"></i> Sair</a>
       {% else %}
-      <a href="{{ url_for('auth.login') }}">Entrar</a>
+      <a href="{{ url_for('auth.login') }}"><i class="bi bi-person-circle"></i> Entrar</a>
       {% endif %}
-      <a class="cart-link" href="{{ url_for('cart.view_cart') }}">Carrinho ({{ cart_count }})</a>
+      <a class="cart-link" href="{{ url_for('cart.view_cart') }}"><i class="bi bi-bag"></i> Carrinho ({{ cart_count }})</a>
     </div>
   </div>
 </header>
@@ -45,22 +58,25 @@
 <footer class="footer">
   <div class="container footer-grid">
     <div>
-      <h4>Caveira Atacado</h4>
-      <p>E-commerce MVP em Flask com visual inspirado no layout enviado, usando preto e vermelho forte.</p>
+      <img class="footer-logo" src="{{ url_for('static', filename='img/logo.svg') }}" alt="Caveira Atacado">
+      <p>Caveira Atacado © Todos os direitos reservados. Produtos originais de marcas renomadas como Vaporesso, Uwell, Voopoo, Elf Bar e mais.</p>
+      <p>Compromisso com qualidade e autenticidade. Siga-nos para atualizações e ofertas exclusivas.</p>
     </div>
     <div>
       <h4>Institucional</h4>
-      <a href="{{ url_for('core.institutional', page='privacidade') }}">Privacidade</a>
-      <a href="{{ url_for('core.institutional', page='termos') }}">Termos</a>
-      <a href="{{ url_for('core.institutional', page='trocas') }}">Trocas e devoluções</a>
+      <a href="{{ url_for('core.institutional', page='privacidade') }}"><i class="bi bi-shield-check"></i> Privacidade</a>
+      <a href="{{ url_for('core.institutional', page='termos') }}"><i class="bi bi-file-earmark-text"></i> Termos</a>
+      <a href="{{ url_for('core.institutional', page='trocas') }}"><i class="bi bi-arrow-repeat"></i> Trocas e devoluções</a>
     </div>
     <div>
       <h4>Atendimento</h4>
-      <p>contato@caveiraatacado.com</p>
-      <p>Seg a Sex · 9h às 18h</p>
+      <p><i class="bi bi-envelope"></i> contato@caveiraatacado.com</p>
+      <p><i class="bi bi-clock"></i> Seg a Sex · 9h às 18h</p>
+      <p><i class="bi bi-instagram"></i> Siga-nos para ofertas exclusivas</p>
     </div>
   </div>
 </footer>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 {% block scripts %}{% endblock %}
 </body>

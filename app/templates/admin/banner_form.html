@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="container section narrow">
+  <form method="post" enctype="multipart/form-data" class="card form-card">
+    <h1>{{ 'Editar' if banner else 'Novo' }} banner</h1>
+    <input name="title" placeholder="Título" value="{{ banner.title if banner else '' }}" required>
+    <textarea name="subtitle" placeholder="Subtítulo">{{ banner.subtitle if banner else '' }}</textarea>
+    <div class="grid-2">
+      <input name="button_text" placeholder="Texto do botão" value="{{ banner.button_text if banner else 'Ver categoria' }}">
+      <input name="display_order" type="number" placeholder="Ordem" value="{{ banner.display_order if banner else 0 }}">
+    </div>
+    <select name="category_id">
+      <option value="">Sem categoria vinculada</option>
+      {% for c in categories %}
+      <option value="{{ c.id }}" {% if banner and banner.category_id == c.id %}selected{% endif %}>{{ c.name }}</option>
+      {% endfor %}
+    </select>
+    <input name="custom_url" placeholder="Link personalizado (opcional)" value="{{ banner.custom_url if banner else '' }}">
+    <input type="hidden" name="existing_image_path" value="{{ banner.image_path if banner else '' }}">
+    <input type="file" name="image">
+    {% if banner and banner.image_path %}<img class="admin-preview" src="{{ banner.image_path }}" alt="{{ banner.title }}">{% endif %}
+    <label class="checkbox"><input type="checkbox" name="is_active" {% if not banner or banner.is_active %}checked{% endif %}> Ativo</label>
+    <button class="btn btn-full">Salvar banner</button>
+  </form>
+</section>
+{% endblock %}

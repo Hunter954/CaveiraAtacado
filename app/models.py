@@ -56,6 +56,20 @@ class Category(TimestampMixin, db.Model):
     products = db.relationship('Product', backref='category', lazy=True)
 
 
+class HomeBanner(TimestampMixin, db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(180), nullable=False)
+    subtitle = db.Column(db.Text)
+    button_text = db.Column(db.String(80), default='Ver categoria')
+    custom_url = db.Column(db.String(255))
+    image_path = db.Column(db.String(255))
+    display_order = db.Column(db.Integer, default=0)
+    is_active = db.Column(db.Boolean, default=True)
+    category_id = db.Column(db.Integer, db.ForeignKey('category.id'))
+
+    category = db.relationship('Category')
+
+
 class Product(TimestampMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     category_id = db.Column(db.Integer, db.ForeignKey('category.id'), nullable=False)
@@ -223,34 +237,60 @@ class OrderStatusLog(TimestampMixin, db.Model):
 
 
 def seed_data():
-    if Category.query.first():
-        return
+    categories = Category.query.order_by(Category.display_order.asc()).all()
 
-    categories = [
-        Category(name='Eletrônicos', slug='eletronicos', display_order=1),
-        Category(name='Moda', slug='moda', display_order=2),
-        Category(name='Casa', slug='casa', display_order=3),
-        Category(name='Games', slug='games', display_order=4),
-    ]
-    db.session.add_all(categories)
-    db.session.flush()
+    if not categories:
+        categories = [
+            Category(name='Eletrônicos', slug='eletronicos', display_order=1),
+            Category(name='Moda', slug='moda', display_order=2),
+            Category(name='Casa', slug='casa', display_order=3),
+            Category(name='Games', slug='games', display_order=4),
+        ]
+        db.session.add_all(categories)
+        db.session.flush()
 
-    products = [
-        Product(category_id=categories[0].id, name='Headset Caveira Pro', slug='headset-caveira-pro', sku='CAV-HEAD-001', short_description='Headset gamer premium.', description='Headset gamer com acabamento premium em vermelho e preto.', price=399.90, promotional_price=329.90, stock=15, is_featured=True, is_new=True),
-        Product(category_id=categories[0].id, name='Smartphone Phantom X', slug='smartphone-phantom-x', sku='CAV-PHONE-001', short_description='Tela AMOLED e alta performance.', description='Smartphone com foco em performance e design premium.', price=2899.90, promotional_price=2599.90, stock=7, is_featured=True),
-        Product(category_id=categories[3].id, name='Controle Skull One', slug='controle-skull-one', sku='CAV-GAME-001', short_description='Controle ergonômico para games.', description='Controle com pegada confortável e excelente resposta.', price=249.90, promotional_price=199.90, stock=30, is_featured=True),
-        Product(category_id=categories[2].id, name='Poltrona Raven', slug='poltrona-raven', sku='CAV-HOME-001', short_description='Conforto para seu setup.', description='Poltrona moderna para casa ou escritório.', price=799.90, stock=9, is_new=True),
-    ]
-    db.session.add_all(products)
-    db.session.flush()
+    if not Product.query.first():
+        products = [
+            Product(category_id=categories[0].id, name='Headset Caveira Pro', slug='headset-caveira-pro', sku='CAV-HEAD-001', short_description='Headset gamer premium.', description='Headset gamer com acabamento premium em vermelho e preto.', price=399.90, promotional_price=329.90, stock=15, is_featured=True, is_new=True),
+            Product(category_id=categories[0].id, name='Smartphone Phantom X', slug='smartphone-phantom-x', sku='CAV-PHONE-001', short_description='Tela AMOLED e alta performance.', description='Smartphone com foco em performance e design premium.', price=2899.90, promotional_price=2599.90, stock=7, is_featured=True),
+            Product(category_id=categories[3].id, name='Controle Skull One', slug='controle-skull-one', sku='CAV-GAME-001', short_description='Controle ergonômico para games.', description='Controle com pegada confortável e excelente resposta.', price=249.90, promotional_price=199.90, stock=30, is_featured=True),
+            Product(category_id=categories[2].id, name='Poltrona Raven', slug='poltrona-raven', sku='CAV-HOME-001', short_description='Conforto para seu setup.', description='Poltrona moderna para casa ou escritório.', price=799.90, stock=9, is_new=True),
+        ]
+        db.session.add_all(products)
+        db.session.flush()
 
-    for product in products:
-        db.session.add(ProductImage(product_id=product.id, image_path='https://placehold.co/600x600/111111/ff2a2a?text=Caveira+Atacado', is_primary=True))
+        for product in products:
+            db.session.add(ProductImage(product_id=product.id, image_path='https://placehold.co/600x600/f8f9fa/d90429?text=Caveira+Atacado', is_primary=True))
 
-    admin = User(full_name='Administrador Caveira', email='admin@caveiraatacado.com', phone='11999999999', is_admin=True)
-    admin.set_password('admin123')
-    db.session.add(admin)
+    if not HomeBanner.query.first() and categories:
+        db.session.add_all([
+            HomeBanner(
+                title='Linha premium em destaque',
+                subtitle='Destaque categorias e promoções em banners rotativos gerenciados pelo painel administrativo.',
+                button_text='Ver categoria',
+                category_id=categories[0].id,
+                image_path='https://placehold.co/1200x520/f8f9fa/d90429?text=Caveira+Atacado',
+                display_order=1,
+                is_active=True,
+            ),
+            HomeBanner(
+                title='Ofertas que o admin controla',
+                subtitle='Escolha a categoria, imagem e ordem de exibição de cada banner direto no admin.',
+                button_text='Comprar agora',
+                category_id=categories[-1].id,
+                image_path='https://placehold.co/1200x520/f8f9fa/111111?text=Banner+Caveira',
+                display_order=2,
+                is_active=True,
+            ),
+        ])
 
-    coupon = Coupon(code='CAVEIRA10', discount_type='percent', discount_value=10)
-    db.session.add(coupon)
+    if not User.query.filter_by(email='admin@caveiraatacado.com').first():
+        admin = User(full_name='Administrador Caveira', email='admin@caveiraatacado.com', phone='11999999999', is_admin=True)
+        admin.set_password('admin123')
+        db.session.add(admin)
+
+    if not Coupon.query.filter_by(code='CAVEIRA10').first():
+        coupon = Coupon(code='CAVEIRA10', discount_type='percent', discount_value=10)
+        db.session.add(coupon)
+
     db.session.commit()

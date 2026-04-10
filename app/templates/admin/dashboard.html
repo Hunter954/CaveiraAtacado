@@ -1,5 +1,21 @@
 {% extends 'base.html' %}
 {% block title %}Admin | Caveira Atacado{% endblock %}
 {% block content %}
-<section class="container section"><div class="section-head"><h1>Painel administrativo</h1></div><div class="stats-grid"><div class="card"><h3>Total vendido</h3><strong>R$ {{ '%.2f'|format(total_sales) }}</strong></div><div class="card"><h3>Pedidos</h3><strong>{{ total_orders }}</strong></div><div class="card"><h3>Clientes</h3><strong>{{ total_customers }}</strong></div><div class="card"><h3>Ticket médio</h3><strong>R$ {{ '%.2f'|format(avg_ticket) }}</strong></div></div><div class="admin-links"><a class="btn btn-secondary" href="{{ url_for('admin.products') }}">Produtos</a><a class="btn btn-secondary" href="{{ url_for('admin.categories') }}">Categorias</a><a class="btn btn-secondary" href="{{ url_for('admin.orders') }}">Pedidos</a><a class="btn btn-secondary" href="{{ url_for('admin.customers') }}">Clientes</a><a class="btn btn-secondary" href="{{ url_for('admin.coupons') }}">Cupons</a></div></section>
+<section class="container section">
+  <div class="section-head"><h1>Painel administrativo</h1></div>
+  <div class="stats-grid">
+    <div class="card"><h3>Total vendido</h3><strong>R$ {{ '%.2f'|format(total_sales) }}</strong></div>
+    <div class="card"><h3>Pedidos</h3><strong>{{ total_orders }}</strong></div>
+    <div class="card"><h3>Clientes</h3><strong>{{ total_customers }}</strong></div>
+    <div class="card"><h3>Ticket médio</h3><strong>R$ {{ '%.2f'|format(avg_ticket) }}</strong></div>
+  </div>
+  <div class="admin-links">
+    <a class="btn btn-secondary" href="{{ url_for('admin.products') }}"><i class="bi bi-box-seam"></i> Produtos</a>
+    <a class="btn btn-secondary" href="{{ url_for('admin.categories') }}"><i class="bi bi-tags"></i> Categorias</a>
+    <a class="btn btn-secondary" href="{{ url_for('admin.banners') }}"><i class="bi bi-images"></i> Banners</a>
+    <a class="btn btn-secondary" href="{{ url_for('admin.orders') }}"><i class="bi bi-receipt"></i> Pedidos</a>
+    <a class="btn btn-secondary" href="{{ url_for('admin.customers') }}"><i class="bi bi-people"></i> Clientes</a>
+    <a class="btn btn-secondary" href="{{ url_for('admin.coupons') }}"><i class="bi bi-ticket-perforated"></i> Cupons</a>
+  </div>
+</section>
 {% endblock %}

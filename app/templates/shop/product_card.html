@@ -8,6 +8,6 @@
     {% if product.promotional_price %}<span>R$ {{ '%.2f'|format(product.price) }}</span>{% endif %}
   </div>
   <form method="post" action="{{ url_for('cart.add_to_cart', product_id=product.id) }}">
-    <button class="btn btn-full">Adicionar ao carrinho</button>
+    <button class="btn btn-full"><i class="bi bi-cart-plus"></i> Adicionar ao carrinho</button>
   </form>
 </div>

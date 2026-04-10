@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="container section">
+  <div class="section-head">
+    <h1>Banners da home</h1>
+    
+  </div>
+
+  <div class="checkout-layout">
+    <form method="post" enctype="multipart/form-data" class="card form-card">
+      <h2>Novo banner</h2>
+      <input name="title" placeholder="Título" required>
+      <textarea name="subtitle" placeholder="Subtítulo"></textarea>
+      <div class="grid-2">
+        <input name="button_text" placeholder="Texto do botão" value="Ver categoria">
+        <input name="display_order" type="number" placeholder="Ordem" value="0">
+      </div>
+      <select name="category_id">
+        <option value="">Sem categoria vinculada</option>
+        {% for c in categories %}
+        <option value="{{ c.id }}">{{ c.name }}</option>
+        {% endfor %}
+      </select>
+      <input name="custom_url" placeholder="Link personalizado (opcional)">
+      <input type="file" name="image">
+      <label class="checkbox"><input type="checkbox" name="is_active" checked> Ativo</label>
+      <button class="btn btn-full">Cadastrar banner</button>
+    </form>
+
+    <div class="card table-wrap">
+      <h2>Lista de banners</h2>
+      <table>
+        <tr><th>Ordem</th><th>Título</th><th>Categoria</th><th>Status</th><th>Ações</th></tr>
+        {% for banner in banners %}
+        <tr>
+          <td>{{ banner.display_order }}</td>
+          <td>{{ banner.title }}</td>
+          <td>{{ banner.category.name if banner.category else 'Sem categoria' }}</td>
+          <td>{{ 'Ativo' if banner.is_active else 'Inativo' }}</td>
+          <td class="table-actions">
+            <a href="{{ url_for('admin.edit_banner', banner_id=banner.id) }}"><i class="bi bi-pencil-square"></i> Editar</a>
+            <form method="post" action="{{ url_for('admin.delete_banner', banner_id=banner.id) }}" onsubmit="return confirm('Remover este banner?');">
+              <button class="btn-link btn-link-danger" type="submit"><i class="bi bi-trash"></i> Excluir</button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5">Nenhum banner cadastrado.</td></tr>
+        {% endfor %}
+      </table>
+    </div>
+  </div>
+</section>
+{% endblock %}

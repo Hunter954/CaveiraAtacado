@@ -4,25 +4,68 @@
 <section class="hero">
   <div class="container hero-grid">
     <aside class="hero-categories card">
-      <h3>Categorias</h3>
+      <h3><i class="bi bi-grid"></i> Categorias</h3>
       {% for category in categories %}
-      <a href="{{ url_for('shop.catalog', category=category.slug) }}">{{ category.name }}</a>
+      <a href="{{ url_for('shop.catalog', category=category.slug) }}"><i class="bi bi-chevron-right"></i> {{ category.name }}</a>
       {% endfor %}
     </aside>
-    <div class="hero-banner card">
-      <div>
-        <span class="tag">Destaque</span>
-        <h1>Até 10% OFF em ofertas da semana</h1>
-        <p>Layout inspirado no print enviado, com identidade forte em preto e vermelho.</p>
-        <a class="btn" href="{{ url_for('shop.catalog') }}">Comprar agora</a>
+
+    <div class="hero-banner card p-0 overflow-hidden">
+      {% if banners %}
+      <div id="homeBannerCarousel" class="carousel slide carousel-fade" data-bs-ride="carousel">
+        <div class="carousel-indicators">
+          {% for banner in banners %}
+          <button type="button" data-bs-target="#homeBannerCarousel" data-bs-slide-to="{{ loop.index0 }}" class="{% if loop.first %}active{% endif %}" aria-current="{% if loop.first %}true{% endif %}" aria-label="Slide {{ loop.index }}"></button>
+          {% endfor %}
+        </div>
+        <div class="carousel-inner">
+          {% for banner in banners %}
+          <div class="carousel-item {% if loop.first %}active{% endif %}">
+            <div class="hero-banner-slide">
+              <div class="hero-copy">
+                <span class="tag">Banner rotativo</span>
+                <h1>{{ banner.title }}</h1>
+                <p>{{ banner.subtitle or 'Banner configurado pelo administrador para destacar categorias e campanhas.' }}</p>
+                {% set target_url = banner.custom_url or (url_for('shop.catalog', category=banner.category.slug) if banner.category else url_for('shop.catalog')) %}
+                <a class="btn" href="{{ target_url }}"><i class="bi bi-arrow-right-circle"></i> {{ banner.button_text or 'Ver categoria' }}</a>
+              </div>
+              <div class="banner-media">
+                {% if banner.image_path %}
+                <img src="{{ banner.image_path }}" alt="{{ banner.title }}">
+                {% else %}
+                <div class="banner-art"></div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        <button class="carousel-control-prev" type="button" data-bs-target="#homeBannerCarousel" data-bs-slide="prev">
+          <span class="carousel-control-prev-icon"></span>
+          <span class="visually-hidden">Anterior</span>
+        </button>
+        <button class="carousel-control-next" type="button" data-bs-target="#homeBannerCarousel" data-bs-slide="next">
+          <span class="carousel-control-next-icon"></span>
+          <span class="visually-hidden">Próximo</span>
+        </button>
       </div>
-      <div class="banner-art"></div>
+      {% else %}
+      <div class="hero-banner-slide">
+        <div class="hero-copy">
+          <span class="tag">Banner rotativo</span>
+          <h1>Cadastre banners no painel</h1>
+          <p>O administrador pode definir imagem, texto, ordem e categoria de destino para cada banner da home.</p>
+          <a class="btn" href="{{ url_for('shop.catalog') }}"><i class="bi bi-arrow-right-circle"></i> Ver produtos</a>
+        </div>
+        <div class="banner-art"></div>
+      </div>
+      {% endif %}
     </div>
   </div>
 </section>
 
 <section class="container section">
-  <div class="section-head"><h2>Flash Sales</h2><a href="{{ url_for('shop.catalog') }}">Ver todos</a></div>
+  <div class="section-head"><h2>Ofertas em destaque</h2><a href="{{ url_for('shop.catalog') }}">Ver todos</a></div>
   <div class="product-grid">
     {% for product in featured_products %}
       {% include 'shop/product_card.html' %}
@@ -31,20 +74,20 @@
 </section>
 
 <section class="container section categories-row">
-  <div class="section-head"><h2>Browse by category</h2></div>
+  <div class="section-head"><h2>Navegue por categoria</h2></div>
   <div class="category-grid">
     {% for category in categories %}
-      <a class="mini-card" href="{{ url_for('shop.catalog', category=category.slug) }}">{{ category.name }}</a>
+      <a class="mini-card" href="{{ url_for('shop.catalog', category=category.slug) }}"><i class="bi bi-tags"></i><span>{{ category.name }}</span></a>
     {% endfor %}
   </div>
 </section>
 
 <section class="container promo-wide card">
   <div>
-    <span class="tag green">Coleção</span>
-    <h2>Enhance your music experience</h2>
-    <p>Banner secundário inspirado na referência, com foco em venda e conversão.</p>
-    <a class="btn" href="{{ url_for('shop.catalog') }}">Ver produtos</a>
+    <span class="tag">Novidades</span>
+    <h2>Produtos originais e seleção especial</h2>
+    <p>Trabalhamos com marcas reconhecidas e ofertas pensadas para conversão no atacado.</p>
+    <a class="btn" href="{{ url_for('shop.catalog') }}"><i class="bi bi-bag-check"></i> Ver produtos</a>
   </div>
 </section>
 

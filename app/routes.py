@@ -50,7 +50,8 @@ def home():
     featured_products = Product.query.filter_by(is_active=True, is_featured=True).limit(8).all()
     new_products = Product.query.filter_by(is_active=True, is_new=True).limit(8).all()
     categories = Category.query.filter_by(is_active=True).order_by(Category.display_order.asc()).all()
-    return render_template('shop/home.html', featured_products=featured_products, new_products=new_products, categories=categories)
+    banners = HomeBanner.query.filter_by(is_active=True).order_by(HomeBanner.display_order.asc(), HomeBanner.created_at.desc()).all()
+    return render_template('shop/home.html', featured_products=featured_products, new_products=new_products, categories=categories, banners=banners)
 
 
 @core_bp.route('/search')
