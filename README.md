@@ -114,14 +114,14 @@ No Railway:
 
 ## PostgreSQL no Railway
 
-Use a `DATABASE_URL` fornecida pelo plugin do Postgres. O projeto já lê essa variável automaticamente.
+Use a `DATABASE_URL` fornecida pelo plugin do Postgres. Se ela vier como `postgresql://...`, o projeto agora converte automaticamente para `postgresql+psycopg://...`, evitando o problema do driver `psycopg2/libpq` no Railway.
 
 ## GitHub e deploy
 
 1. Suba o projeto para um repositório.
 2. Conecte o repositório ao Railway.
 3. Adicione as variáveis de ambiente.
-4. Configure o start command:
+4. O projeto agora inclui um `Procfile` com o start command abaixo, então o Railway costuma detectar sozinho. Se precisar preencher manualmente, use:
 
 ```bash
 gunicorn run:app
@@ -148,3 +148,8 @@ Este pacote entrega uma base funcional e organizada para subir no GitHub e evolu
 - observabilidade/logging centralizado
 - testes automatizados
 - revisão de segurança e LGPD operacional
+
+
+## Patch Railway aplicado
+
+Este patch troca o driver de banco para `psycopg` v3 com binário embutido e normaliza a `DATABASE_URL` para `postgresql+psycopg://`, evitando o erro `ImportError: libpq.so.5` no boot do Railway.
