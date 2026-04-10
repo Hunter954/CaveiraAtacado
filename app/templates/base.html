@@ -15,14 +15,11 @@
 <body>
 <header class="topbar">
   <div class="container header-inner">
-    <a class="logo" href="{{ url_for('core.home') }}" aria-label="Caveira Atacado">
-      <img src="{{ url_for('static', filename='img/logo.svg') }}" alt="Caveira Atacado">
-    </a>
-
-    <nav class="nav">
+    <nav class="nav header-categories-nav">
       <div class="dropdown">
-        <button class="btn btn-nav dropdown-toggle" data-bs-toggle="dropdown" type="button">
-          <i class="bi bi-grid"></i> Categorias
+        <button class="btn btn-nav dropdown-toggle header-categories-btn" data-bs-toggle="dropdown" type="button">
+          <i class="bi bi-grid"></i>
+          <span class="desktop-only">Categorias</span>
         </button>
         <ul class="dropdown-menu dropdown-menu-dark category-menu">
           {% for category in nav_categories %}
@@ -32,19 +29,23 @@
       </div>
     </nav>
 
+    <a class="logo" href="{{ url_for('core.home') }}" aria-label="Caveira Atacado">
+      <img src="{{ url_for('static', filename='img/logo.svg') }}" alt="Caveira Atacado">
+    </a>
+
     <form class="searchbar" action="{{ url_for('core.search') }}">
       <input type="text" name="q" placeholder="Buscar produtos...">
     </form>
 
     <div class="header-actions">
       {% if current_user.is_authenticated %}
-      <a href="{{ url_for('user.dashboard') }}"><i class="bi bi-person-circle"></i> Minha conta</a>
-      {% if current_user.is_admin %}<a href="{{ url_for('admin.dashboard') }}"><i class="bi bi-speedometer2"></i> Admin</a>{% endif %}
-      <a href="{{ url_for('auth.logout') }}"><i class="bi bi-box-arrow-right"></i> Sair</a>
+      <a href="{{ url_for('user.dashboard') }}"><i class="bi bi-person-circle"></i><span class="desktop-only">Minha conta</span></a>
+      {% if current_user.is_admin %}<a class="desktop-only" href="{{ url_for('admin.dashboard') }}"><i class="bi bi-speedometer2"></i><span>Admin</span></a>{% endif %}
+      <a class="desktop-only" href="{{ url_for('auth.logout') }}"><i class="bi bi-box-arrow-right"></i><span>Sair</span></a>
       {% else %}
-      <a href="{{ url_for('auth.login') }}"><i class="bi bi-person-circle"></i> Entrar</a>
+      <a href="{{ url_for('auth.login') }}"><i class="bi bi-person-circle"></i><span class="desktop-only">Entrar</span></a>
       {% endif %}
-      <a class="cart-link" href="{{ url_for('cart.view_cart') }}"><i class="bi bi-bag"></i> Carrinho ({{ cart_count }})</a>
+      <a class="cart-link" href="{{ url_for('cart.view_cart') }}"><i class="bi bi-bag"></i><span class="desktop-only">Carrinho ({{ cart_count }})</span><span class="mobile-only">{{ cart_count }}</span></a>
     </div>
   </div>
 </header>
