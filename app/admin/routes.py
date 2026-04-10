@@ -60,6 +60,9 @@ def _generate_unique_product_sku(base_sku):
     return candidate
 
 
+def _public_upload_path(filename):
+    return f'/uploads/{filename}'
+
 
 def _save_product_images(product, uploaded_files, replace_existing=False):
     valid_files = [file for file in uploaded_files if file and file.filename and allowed_file(file.filename)]
@@ -80,7 +83,7 @@ def _save_product_images(product, uploaded_files, replace_existing=False):
         file.save(save_path)
         db.session.add(ProductImage(
             product_id=product.id,
-            image_path='/' + save_path.replace('app/', ''),
+            image_path=_public_upload_path(filename),
             alt_text=product.name,
             is_primary=(index == 0),
         ))
@@ -320,7 +323,7 @@ def banners():
             filename = unique_filename(file.filename)
             save_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
             file.save(save_path)
-            image_path = '/' + save_path.replace('app/', '')
+            image_path = _public_upload_path(filename)
 
         banner = HomeBanner(
             title=request.form['title'],
@@ -352,7 +355,7 @@ def edit_banner(banner_id):
             filename = unique_filename(file.filename)
             save_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
             file.save(save_path)
-            banner.image_path = '/' + save_path.replace('app/', '')
+            banner.image_path = _public_upload_path(filename)
         else:
             banner.image_path = request.form.get('existing_image_path') or banner.image_path
 

@@ -3,7 +3,7 @@
 {% block content %}
 <section class="container section product-detail-grid">
   <div class="card">
-    <img class="product-main-image" src="{{ product.images[0].image_path if product.images else 'https://placehold.co/700x700/111111/ff2a2a?text=Caveira' }}" alt="{{ product.name }}">
+    <img class="product-main-image" src="{{ media_url(product.images[0].image_path) if product.images else 'https://placehold.co/700x700/111111/ff2a2a?text=Caveira' }}" alt="{{ product.name }}">
   </div>
   <div class="card">
     <span class="tag">SKU {{ product.sku }}</span>

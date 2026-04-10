@@ -18,6 +18,15 @@ def _normalize_database_url(url: str) -> str:
     return normalized
 
 
+def _default_upload_folder() -> str:
+    explicit = os.getenv('UPLOAD_FOLDER')
+    if explicit:
+        return explicit
+    if os.path.isdir('/data'):
+        return '/data/uploads'
+    return 'app/static/uploads'
+
+
 class Config:
     SECRET_KEY = os.getenv('SECRET_KEY', 'dev-secret')
     SQLALCHEMY_DATABASE_URI = _normalize_database_url(os.getenv('DATABASE_URL', 'sqlite:///caveira_atacado.db'))
@@ -25,7 +34,7 @@ class Config:
     SQLALCHEMY_ENGINE_OPTIONS = {
         'pool_pre_ping': True,
     }
-    UPLOAD_FOLDER = os.getenv('UPLOAD_FOLDER', 'app/static/uploads')
+    UPLOAD_FOLDER = _default_upload_folder()
     MAX_CONTENT_LENGTH = int(os.getenv('MAX_CONTENT_LENGTH', 5 * 1024 * 1024))
     MERCADOPAGO_ACCESS_TOKEN = os.getenv('MERCADOPAGO_ACCESS_TOKEN', '')
     MERCADOPAGO_PUBLIC_KEY = os.getenv('MERCADOPAGO_PUBLIC_KEY', '')

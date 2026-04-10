@@ -2,7 +2,7 @@ import json
 import os
 from decimal import Decimal
 from datetime import datetime, timedelta
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify, current_app
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify, current_app, send_from_directory
 from flask_login import login_user, logout_user, login_required, current_user
 from .extensions import db
 from .models import User, Category, Product, ProductImage, Cart, CartItem, Coupon, Order, OrderItem, UserAddress, PasswordReset, OrderStatusLog, HomeBanner
@@ -19,6 +19,39 @@ cart_bp = Blueprint('cart', __name__)
 checkout_bp = Blueprint('checkout', __name__)
 user_bp = Blueprint('user', __name__)
 webhook_bp = Blueprint('webhooks', __name__)
+
+
+def normalize_media_url(path):
+    if not path:
+        return path
+    if path.startswith(('http://', 'https://')):
+        return path
+
+    normalized = path.strip()
+    if normalized.startswith('//data/uploads/'):
+        filename = os.path.basename(normalized)
+        return url_for('core.uploaded_file', filename=filename)
+    if normalized.startswith('/data/uploads/'):
+        filename = os.path.basename(normalized)
+        return url_for('core.uploaded_file', filename=filename)
+    if normalized.startswith('data/uploads/'):
+        filename = os.path.basename(normalized)
+        return url_for('core.uploaded_file', filename=filename)
+    if normalized.startswith('/uploads/'):
+        return normalized
+    if normalized.startswith('uploads/'):
+        return '/' + normalized
+    return normalized
+
+
+@core_bp.app_context_processor
+def inject_media_helpers():
+    return {'media_url': normalize_media_url}
+
+
+@core_bp.route('/uploads/<path:filename>')
+def uploaded_file(filename):
+    return send_from_directory(current_app.config['UPLOAD_FOLDER'], filename)
 
 
 def get_cart():

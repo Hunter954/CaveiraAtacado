@@ -18,7 +18,7 @@
     <input name="custom_url" placeholder="Link personalizado (opcional)" value="{{ banner.custom_url if banner else '' }}">
     <input type="hidden" name="existing_image_path" value="{{ banner.image_path if banner else '' }}">
     <input type="file" name="image">
-    {% if banner and banner.image_path %}<img class="admin-preview" src="{{ banner.image_path }}" alt="{{ banner.title }}">{% endif %}
+    {% if banner and banner.image_path %}<img class="admin-preview" src="{{ media_url(banner.image_path) }}" alt="{{ banner.title }}">{% endif %}
     <label class="checkbox"><input type="checkbox" name="is_active" {% if not banner or banner.is_active %}checked{% endif %}> Ativo</label>
     <button class="btn btn-full">Salvar banner</button>
   </form>
