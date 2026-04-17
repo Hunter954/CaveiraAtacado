@@ -11,16 +11,22 @@
       <tr>
         <th>ID</th>
         <th>Nome</th>
+        <th>Categoria</th>
+        <th>Marca</th>
         <th>SKU</th>
         <th>Estoque</th>
+        <th>Venda</th>
         <th>Ações</th>
       </tr>
       {% for p in products %}
       <tr>
         <td>{{ p.id }}</td>
         <td>{{ p.name }}</td>
+        <td>{{ p.category.name }}</td>
+        <td>{{ p.brand.name if p.brand else 'Sem marca' }}</td>
         <td>{{ p.sku }}</td>
         <td>{{ p.stock }}</td>
+        <td>{{ 'WhatsApp' if p.redirect_to_whatsapp else 'Carrinho' }}</td>
         <td style="display:flex; gap:12px; flex-wrap:wrap;">
           <a href="{{ url_for('admin.edit_product', product_id=p.id) }}"><i class="bi bi-pencil-square"></i> Editar</a>
           <form method="post" action="{{ url_for('admin.duplicate_product', product_id=p.id) }}" onsubmit="return confirm('Deseja duplicar este produto?');">

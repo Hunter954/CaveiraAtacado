@@ -1,13 +1,18 @@
 <div class="product-card card">
   {% set primary_image = media_url(product.images[0].image_path) if product.images else 'https://placehold.co/600x600/111111/ff2a2a?text=Caveira' %}
   <a href="{{ url_for('shop.product_detail', slug=product.slug) }}"><img src="{{ primary_image }}" alt="{{ product.name }}"></a>
+  {% if product.brand %}<span class="product-brand">{{ product.brand.name }}</span>{% endif %}
   <h3>{{ product.name }}</h3>
   <p>{{ product.short_description or product.description[:80] }}</p>
   <div class="price-wrap">
     <strong>R$ {{ product.final_price|brl_currency }}</strong>
     {% if product.promotional_price %}<span>R$ {{ product.price|brl_currency }}</span>{% endif %}
   </div>
+  {% if product.requires_whatsapp_redirect %}
+  <a class="btn btn-full product-card-button" href="{{ url_for('shop.product_detail', slug=product.slug) }}" aria-label="Ver {{ product.name }}"><i class="bi bi-eye"></i><span class="product-card-button-label">Ver o produto</span></a>
+  {% else %}
   <form method="post" action="{{ url_for('cart.add_to_cart', product_id=product.id) }}">
     <button class="btn btn-full product-card-button" aria-label="Adicionar {{ product.name }} ao carrinho"><i class="bi bi-cart-plus"></i><span class="product-card-button-label">Adicionar ao carrinho</span></button>
   </form>
+  {% endif %}
 </div>

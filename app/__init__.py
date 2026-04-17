@@ -1,7 +1,7 @@
 import logging
 import os
 from flask import Flask
-from sqlalchemy import inspect
+from sqlalchemy import inspect, text
 from .config import Config
 from .extensions import db, migrate, login_manager, mail
 from .routes import core_bp, auth_bp, shop_bp, cart_bp, checkout_bp, user_bp, webhook_bp
@@ -20,7 +20,6 @@ def bootstrap_database(app):
         return
 
     with app.app_context():
-        # Garante que todos os models estejam registrados no metadata antes do create_all.
         from . import models  # noqa: F401
 
         inspector = inspect(db.engine)
@@ -33,6 +32,13 @@ def bootstrap_database(app):
             db.create_all()
         else:
             logger.info('Todas as tabelas ja existem no banco.')
+
+        product_columns = {column['name'] for column in inspector.get_columns('product')} if 'product' in existing_tables else set()
+        if 'brand_id' not in product_columns:
+            db.session.execute(text('ALTER TABLE product ADD COLUMN brand_id INTEGER'))
+        if 'redirect_to_whatsapp' not in product_columns:
+            db.session.execute(text('ALTER TABLE product ADD COLUMN redirect_to_whatsapp BOOLEAN DEFAULT 0'))
+        db.session.commit()
 
         if auto_seed:
             try:

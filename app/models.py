@@ -54,6 +54,23 @@ class Category(TimestampMixin, db.Model):
     display_order = db.Column(db.Integer, default=0)
 
     products = db.relationship('Product', backref='category', lazy=True)
+    brands = db.relationship('Brand', backref='category', lazy=True, cascade='all, delete-orphan', order_by='Brand.name.asc()')
+
+
+class Brand(TimestampMixin, db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    category_id = db.Column(db.Integer, db.ForeignKey('category.id'), nullable=False, index=True)
+    name = db.Column(db.String(120), nullable=False)
+    slug = db.Column(db.String(150), nullable=False)
+    is_active = db.Column(db.Boolean, default=True)
+    __table_args__ = (db.UniqueConstraint('category_id', 'slug', name='uq_brand_category_slug'),)
+
+    products = db.relationship('Product', backref='brand', lazy=True)
+
+
+class SiteSetting(TimestampMixin, db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    whatsapp_number = db.Column(db.String(30))
 
 
 class HomeBanner(TimestampMixin, db.Model):
@@ -73,6 +90,7 @@ class HomeBanner(TimestampMixin, db.Model):
 class Product(TimestampMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     category_id = db.Column(db.Integer, db.ForeignKey('category.id'), nullable=False)
+    brand_id = db.Column(db.Integer, db.ForeignKey('brand.id'))
     name = db.Column(db.String(180), nullable=False)
     slug = db.Column(db.String(180), unique=True, nullable=False)
     sku = db.Column(db.String(60), unique=True, nullable=False)
@@ -88,6 +106,7 @@ class Product(TimestampMixin, db.Model):
     is_featured = db.Column(db.Boolean, default=False)
     is_new = db.Column(db.Boolean, default=False)
     is_active = db.Column(db.Boolean, default=True)
+    redirect_to_whatsapp = db.Column(db.Boolean, default=False)
 
     images = db.relationship('ProductImage', backref='product', lazy=True, cascade='all, delete-orphan')
     variations = db.relationship('ProductVariation', backref='product', lazy=True, cascade='all, delete-orphan')
@@ -95,6 +114,10 @@ class Product(TimestampMixin, db.Model):
     @property
     def final_price(self):
         return self.promotional_price or self.price
+
+    @property
+    def requires_whatsapp_redirect(self):
+        return bool(self.redirect_to_whatsapp)
 
 
 class ProductImage(TimestampMixin, db.Model):
@@ -236,6 +259,15 @@ class OrderStatusLog(TimestampMixin, db.Model):
     note = db.Column(db.String(255))
 
 
+def get_site_setting():
+    setting = SiteSetting.query.order_by(SiteSetting.id.asc()).first()
+    if not setting:
+        setting = SiteSetting(whatsapp_number='')
+        db.session.add(setting)
+        db.session.flush()
+    return setting
+
+
 def seed_data():
     categories = Category.query.order_by(Category.display_order.asc()).all()
 
@@ -249,12 +281,28 @@ def seed_data():
         db.session.add_all(categories)
         db.session.flush()
 
+    default_brands = {
+        'eletronicos': ['Caveira Tech', 'Phantom'],
+        'moda': ['Nike', 'Adidas'],
+        'casa': ['Raven Home'],
+        'games': ['Skull One'],
+    }
+    for category in categories:
+        if not category.brands:
+            for brand_name in default_brands.get(category.slug, [category.name]):
+                db.session.add(Brand(category_id=category.id, name=brand_name, slug=brand_name.lower().replace(' ', '-'), is_active=True))
+    db.session.flush()
+
     if not Product.query.first():
+        brand_map = {}
+        for brand in Brand.query.all():
+            brand_map.setdefault(brand.category.slug, brand)
+
         products = [
-            Product(category_id=categories[0].id, name='Headset Caveira Pro', slug='headset-caveira-pro', sku='CAV-HEAD-001', short_description='Headset gamer premium.', description='Headset gamer com acabamento premium em vermelho e preto.', price=399.90, promotional_price=329.90, stock=15, is_featured=True, is_new=True),
-            Product(category_id=categories[0].id, name='Smartphone Phantom X', slug='smartphone-phantom-x', sku='CAV-PHONE-001', short_description='Tela AMOLED e alta performance.', description='Smartphone com foco em performance e design premium.', price=2899.90, promotional_price=2599.90, stock=7, is_featured=True),
-            Product(category_id=categories[3].id, name='Controle Skull One', slug='controle-skull-one', sku='CAV-GAME-001', short_description='Controle ergonômico para games.', description='Controle com pegada confortável e excelente resposta.', price=249.90, promotional_price=199.90, stock=30, is_featured=True),
-            Product(category_id=categories[2].id, name='Poltrona Raven', slug='poltrona-raven', sku='CAV-HOME-001', short_description='Conforto para seu setup.', description='Poltrona moderna para casa ou escritório.', price=799.90, stock=9, is_new=True),
+            Product(category_id=categories[0].id, brand_id=brand_map.get('eletronicos').id if brand_map.get('eletronicos') else None, name='Headset Caveira Pro', slug='headset-caveira-pro', sku='CAV-HEAD-001', short_description='Headset gamer premium.', description='Headset gamer com acabamento premium em vermelho e preto.', price=399.90, promotional_price=329.90, stock=15, is_featured=True, is_new=True),
+            Product(category_id=categories[0].id, brand_id=brand_map.get('eletronicos').id if brand_map.get('eletronicos') else None, name='Smartphone Phantom X', slug='smartphone-phantom-x', sku='CAV-PHONE-001', short_description='Tela AMOLED e alta performance.', description='Smartphone com foco em performance e design premium.', price=2899.90, promotional_price=2599.90, stock=7, is_featured=True),
+            Product(category_id=categories[3].id, brand_id=brand_map.get('games').id if brand_map.get('games') else None, name='Controle Skull One', slug='controle-skull-one', sku='CAV-GAME-001', short_description='Controle ergonômico para games.', description='Controle com pegada confortável e excelente resposta.', price=249.90, promotional_price=199.90, stock=30, is_featured=True),
+            Product(category_id=categories[2].id, brand_id=brand_map.get('casa').id if brand_map.get('casa') else None, name='Poltrona Raven', slug='poltrona-raven', sku='CAV-HOME-001', short_description='Conforto para seu setup.', description='Poltrona moderna para casa ou escritório.', price=799.90, stock=9, is_new=True),
         ]
         db.session.add_all(products)
         db.session.flush()
@@ -293,4 +341,5 @@ def seed_data():
         coupon = Coupon(code='CAVEIRA10', discount_type='percent', discount_value=10)
         db.session.add(coupon)
 
+    get_site_setting()
     db.session.commit()

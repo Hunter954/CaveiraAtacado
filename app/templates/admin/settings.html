@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block title %}Configurações | Caveira Atacado{% endblock %}
+{% block content %}
+<section class="container section narrow">
+  <form method="post" class="card form-card">
+    <h1>Configurações de WhatsApp</h1>
+    <p class="hint">Defina o número que será usado nos produtos marcados para atendimento via WhatsApp.</p>
+    <input type="text" name="whatsapp_number" placeholder="5511999999999" value="{{ setting.whatsapp_number or '' }}">
+    <small class="hint">Use DDI + DDD + número, apenas números.</small>
+    {% if preview_link %}
+    <a href="{{ preview_link }}" target="_blank" rel="noopener">Testar link do WhatsApp</a>
+    {% endif %}
+    <button class="btn btn-full">Salvar configurações</button>
+  </form>
+</section>
+{% endblock %}

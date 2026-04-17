@@ -1,2 +1,52 @@
 {% extends 'base.html' %}
-{% block content %}<section class="container section narrow"><form method="post" enctype="multipart/form-data" class="card form-card"><h1>{{ 'Editar' if product else 'Novo' }} produto</h1><select name="category_id" required>{% for c in categories %}<option value="{{ c.id }}" {% if product and product.category_id == c.id %}selected{% endif %}>{{ c.name }}</option>{% endfor %}</select><input name="name" placeholder="Nome" value="{{ product.name if product else '' }}" required><input name="sku" placeholder="SKU" value="{{ product.sku if product else '' }}" required><input name="short_description" placeholder="Descrição curta" value="{{ product.short_description if product else '' }}"><textarea name="description" placeholder="Descrição completa">{{ product.description if product else '' }}</textarea><input name="price" type="number" step="0.01" placeholder="Preço" value="{{ product.price if product else '' }}" required><input name="promotional_price" type="number" step="0.01" placeholder="Preço promocional" value="{{ product.promotional_price if product else '' }}"><input name="stock" type="number" placeholder="Estoque" value="{{ product.stock if product else 0 }}"><input name="weight" type="number" step="0.01" placeholder="Peso" value="{{ product.weight if product else 0 }}"><input name="width" type="number" step="0.01" placeholder="Largura" value="{{ product.width if product else 0 }}"><input name="height" type="number" step="0.01" placeholder="Altura" value="{{ product.height if product else 0 }}"><input name="length" type="number" step="0.01" placeholder="Comprimento" value="{{ product.length if product else 0 }}">{% if product and product.images %}<p class="hint">Ao enviar novas imagens na edição, as imagens atuais serão substituídas.</p>{% endif %}<input type="file" name="images" multiple><label class="checkbox"><input type="checkbox" name="is_featured" {% if product and product.is_featured %}checked{% endif %}> Destaque</label><label class="checkbox"><input type="checkbox" name="is_new" {% if product and product.is_new %}checked{% endif %}> Novo</label><label class="checkbox"><input type="checkbox" name="is_active" {% if not product or product.is_active %}checked{% endif %}> Ativo</label><button class="btn btn-full">Salvar</button></form></section>{% endblock %}
+{% block content %}
+<section class="container section narrow">
+  <form method="post" enctype="multipart/form-data" class="card form-card">
+    <h1>{{ 'Editar' if product else 'Novo' }} produto</h1>
+
+    <label>
+      <span>Categoria</span>
+      <select name="category_id" id="category_id" data-category-select required>
+        <option value="">Selecione</option>
+        {% for c in categories %}
+        <option value="{{ c.id }}" {% if product and product.category_id == c.id %}selected{% endif %}>{{ c.name }}</option>
+        {% endfor %}
+      </select>
+    </label>
+
+    <label>
+      <span>Marca</span>
+      <select name="brand_id" id="brand_id" data-brand-select data-selected-brand="{{ product.brand_id if product and product.brand_id else '' }}">
+        <option value="">Selecione uma marca</option>
+      </select>
+      <small class="hint">As marcas são cadastradas dentro de cada categoria.</small>
+    </label>
+
+    <input name="name" placeholder="Nome" value="{{ product.name if product else '' }}" required>
+    <input name="sku" placeholder="SKU" value="{{ product.sku if product else '' }}" required>
+    <input name="short_description" placeholder="Descrição curta" value="{{ product.short_description if product else '' }}">
+    <textarea name="description" placeholder="Descrição completa">{{ product.description if product else '' }}</textarea>
+    <input name="price" type="number" step="0.01" placeholder="Preço" value="{{ product.price if product else '' }}" required>
+    <input name="promotional_price" type="number" step="0.01" placeholder="Preço promocional" value="{{ product.promotional_price if product else '' }}">
+    <input name="stock" type="number" placeholder="Estoque" value="{{ product.stock if product else 0 }}">
+    <input name="weight" type="number" step="0.01" placeholder="Peso" value="{{ product.weight if product else 0 }}">
+    <input name="width" type="number" step="0.01" placeholder="Largura" value="{{ product.width if product else 0 }}">
+    <input name="height" type="number" step="0.01" placeholder="Altura" value="{{ product.height if product else 0 }}">
+    <input name="length" type="number" step="0.01" placeholder="Comprimento" value="{{ product.length if product else 0 }}">
+    {% if product and product.images %}<p class="hint">Ao enviar novas imagens na edição, as imagens atuais serão substituídas.</p>{% endif %}
+    <input type="file" name="images" multiple>
+
+    <label class="checkbox"><input type="checkbox" name="redirect_to_whatsapp" {% if product and product.redirect_to_whatsapp %}checked{% endif %}> Este produto leva o cliente para o WhatsApp em vez do carrinho</label>
+    <label class="checkbox"><input type="checkbox" name="is_featured" {% if product and product.is_featured %}checked{% endif %}> Destaque</label>
+    <label class="checkbox"><input type="checkbox" name="is_new" {% if product and product.is_new %}checked{% endif %}> Novo</label>
+    <label class="checkbox"><input type="checkbox" name="is_active" {% if not product or product.is_active %}checked{% endif %}> Ativo</label>
+    <button class="btn btn-full">Salvar</button>
+  </form>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  window.productBrandsByCategory = {{ brands_by_category|tojson }};
+</script>
+{% endblock %}

@@ -7,6 +7,7 @@
   </div>
   <div class="card">
     <span class="tag">SKU {{ product.sku }}</span>
+    {% if product.brand %}<p class="product-meta-line">Marca: <strong>{{ product.brand.name }}</strong></p>{% endif %}
     <h1>{{ product.name }}</h1>
     <p>{{ product.description }}</p>
     <div class="price-wrap detail-price">
@@ -14,6 +15,17 @@
       {% if product.promotional_price %}<span>R$ {{ product.price|brl_currency }}</span>{% endif %}
     </div>
     <p>Estoque disponível: {{ product.stock }}</p>
+
+    {% if product.requires_whatsapp_redirect %}
+    <div class="whatsapp-purchase-box">
+      <p class="whatsapp-shipping-label">Frete a consultar via WhatsApp</p>
+      {% if whatsapp_link %}
+      <a class="btn btn-full" href="{{ whatsapp_link }}" target="_blank" rel="noopener"><i class="bi bi-whatsapp"></i> Falar no WhatsApp</a>
+      {% else %}
+      <p class="flash warning">Configure o número do WhatsApp no painel administrativo para ativar este botão.</p>
+      {% endif %}
+    </div>
+    {% else %}
     <form method="post" action="{{ url_for('cart.add_to_cart', product_id=product.id) }}">
       <div class="inline-fields">
         <input type="number" name="quantity" min="1" value="1">
@@ -27,6 +39,8 @@
         <button class="btn btn-secondary">Calcular</button>
       </div>
     </form>
+    {% endif %}
+
     {% if shipping_result %}
       {% if shipping_result.error %}
       <p class="flash danger">{{ shipping_result.error }}</p>
@@ -39,6 +53,27 @@
       </div>
       {% endif %}
     {% endif %}
+  </div>
+</section>
+
+<section class="container section benefit-section">
+  <div class="benefit-grid card">
+    <div class="benefit-item">
+      <div class="benefit-icon"><i class="bi bi-patch-check"></i></div>
+      <div><strong>100% ORIGINAL</strong><p>Produto original garantido pela Caveira Atacado.</p></div>
+    </div>
+    <div class="benefit-item">
+      <div class="benefit-icon"><i class="bi bi-shield-lock"></i></div>
+      <div><strong>COMPRA SEGURA</strong><p>Realize suas compras com total segurança.</p></div>
+    </div>
+    <div class="benefit-item">
+      <div class="benefit-icon"><i class="bi bi-clock-history"></i></div>
+      <div><strong>24 HORAS</strong><p>Pedidos confirmados são enviados em 1 dia útil.</p></div>
+    </div>
+    <div class="benefit-item">
+      <div class="benefit-icon"><i class="bi bi-person-badge"></i></div>
+      <div><strong>SUPORTE PROFISSIONAL</strong><p>Equipe de atendimento especializada.</p></div>
+    </div>
   </div>
 </section>
 

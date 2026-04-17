@@ -2,10 +2,11 @@ import json
 import os
 from decimal import Decimal
 from datetime import datetime, timedelta
+from urllib.parse import quote
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify, current_app, send_from_directory
 from flask_login import login_user, logout_user, login_required, current_user
 from .extensions import db
-from .models import User, Category, Product, ProductImage, Cart, CartItem, Coupon, Order, OrderItem, UserAddress, PasswordReset, OrderStatusLog, HomeBanner
+from .models import User, Category, Product, ProductImage, Cart, CartItem, Coupon, Order, OrderItem, UserAddress, PasswordReset, OrderStatusLog, HomeBanner, Brand, get_site_setting
 from .services.shipping_service import calculate_shipping
 from .services.cep_service import lookup_cep
 from .services.payment_service import MercadoPagoService, update_payment_from_webhook
@@ -67,6 +68,15 @@ def get_cart():
     return cart
 
 
+def build_whatsapp_link(product):
+    setting = get_site_setting()
+    number = ''.join(char for char in (setting.whatsapp_number or '') if char.isdigit())
+    if not number:
+        return None
+    message = f'Olá! Tenho interesse no produto {product.name} (SKU {product.sku}).'
+    return f'https://wa.me/{number}?text={quote(message)}'
+
+
 @core_bp.app_context_processor
 def inject_globals():
     categories = Category.query.filter_by(is_active=True).order_by(Category.display_order.asc()).all()
@@ -75,7 +85,12 @@ def inject_globals():
         cart_count = sum(item.quantity for item in get_cart().items)
     except Exception:
         pass
-    return {'nav_categories': categories, 'cart_count': cart_count}
+    return {
+        'nav_categories': categories,
+        'cart_count': cart_count,
+        'site_whatsapp_number': ''.join(char for char in (get_site_setting().whatsapp_number or '') if char.isdigit()),
+        'build_whatsapp_link': build_whatsapp_link,
+    }
 
 
 @core_bp.route('/')
@@ -91,7 +106,7 @@ def home():
 def search():
     query = request.args.get('q', '')
     products = Product.query.filter(Product.is_active.is_(True), Product.name.ilike(f'%{query}%')).all()
-    return render_template('shop/catalog.html', products=products, query=query, current_category=None)
+    return render_template('shop/catalog.html', products=products, query=query, current_category=None, current_brand=None, available_brands=[])
 
 
 @core_bp.route('/institucional/<page>')
@@ -183,14 +198,23 @@ def reset_password(token):
 @shop_bp.route('/catalog')
 def catalog():
     category_slug = request.args.get('category')
+    brand_slug = request.args.get('brand')
     search_term = request.args.get('q')
     sort = request.args.get('sort', 'recent')
     products = Product.query.filter_by(is_active=True)
     current_category = None
+    current_brand = None
     if category_slug:
         current_category = Category.query.filter_by(slug=category_slug).first()
         if current_category:
             products = products.filter_by(category_id=current_category.id)
+    if brand_slug:
+        brand_query = Brand.query.filter_by(slug=brand_slug, is_active=True)
+        if current_category:
+            brand_query = brand_query.filter_by(category_id=current_category.id)
+        current_brand = brand_query.first()
+        if current_brand:
+            products = products.filter_by(brand_id=current_brand.id)
     if search_term:
         products = products.filter(Product.name.ilike(f'%{search_term}%'))
     if sort == 'price_asc':
@@ -199,7 +223,8 @@ def catalog():
         products = products.order_by(Product.price.desc())
     else:
         products = products.order_by(Product.created_at.desc())
-    return render_template('shop/catalog.html', products=products.all(), current_category=current_category, query=search_term)
+    available_brands = current_category.brands if current_category else []
+    return render_template('shop/catalog.html', products=products.all(), current_category=current_category, current_brand=current_brand, available_brands=available_brands, query=search_term)
 
 
 @shop_bp.route('/product/<slug>', methods=['GET', 'POST'])
@@ -207,9 +232,9 @@ def product_detail(slug):
     product = Product.query.filter_by(slug=slug, is_active=True).first_or_404()
     related_products = Product.query.filter(Product.category_id == product.category_id, Product.id != product.id).limit(4).all()
     shipping_result = None
-    if request.method == 'POST' and request.form.get('zipcode'):
+    if request.method == 'POST' and request.form.get('zipcode') and not product.requires_whatsapp_redirect:
         shipping_result = calculate_shipping(request.form['zipcode'])
-    return render_template('shop/product_detail.html', product=product, related_products=related_products, shipping_result=shipping_result)
+    return render_template('shop/product_detail.html', product=product, related_products=related_products, shipping_result=shipping_result, whatsapp_link=build_whatsapp_link(product))
 
 
 @cart_bp.route('/')
@@ -222,6 +247,13 @@ def view_cart():
 @cart_bp.route('/add/<int:product_id>', methods=['POST'])
 def add_to_cart(product_id):
     product = Product.query.get_or_404(product_id)
+    if product.requires_whatsapp_redirect:
+        whatsapp_link = build_whatsapp_link(product)
+        if whatsapp_link:
+            return redirect(whatsapp_link)
+        flash('Configure o número do WhatsApp no painel administrativo para este produto.', 'warning')
+        return redirect(url_for('shop.product_detail', slug=product.slug))
+
     cart = get_cart()
     item = CartItem.query.filter_by(cart_id=cart.id, product_id=product.id).first()
     quantity = int(request.form.get('quantity', 1))
