@@ -5,7 +5,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from flask_login import login_required, current_user
 from sqlalchemy.exc import IntegrityError
 from ..extensions import db
-from ..models import Product, Category, ProductImage, ProductVariation, Order, User, Coupon, HomeBanner, Brand, SiteSetting, get_site_setting
+from ..models import Product, Category, ProductImage, ProductVariation, ProductFlavor, Order, User, Coupon, HomeBanner, Brand, SiteSetting, get_site_setting
 from ..utils.helpers import slugify, allowed_file, unique_filename
 
 admin_bp = Blueprint('admin', __name__)
@@ -28,6 +28,29 @@ def _parse_bool(field_name):
 
 def _normalize_whatsapp_number(value):
     return ''.join(char for char in (value or '') if char.isdigit())
+
+
+def _parse_flavors(raw_value):
+    unique_flavors = []
+    seen = set()
+    for chunk in (raw_value or '').replace('\r', '\n').split('\n'):
+        for item in chunk.split(','):
+            flavor = item.strip()
+            if not flavor:
+                continue
+            normalized = flavor.casefold()
+            if normalized in seen:
+                continue
+            seen.add(normalized)
+            unique_flavors.append(flavor)
+    return unique_flavors
+
+
+def _sync_product_flavors(product, raw_value):
+    flavors = _parse_flavors(raw_value)
+    product.flavors.clear()
+    for index, flavor in enumerate(flavors):
+        product.flavors.append(ProductFlavor(name=flavor, display_order=index))
 
 
 @admin_bp.route('/')
@@ -109,6 +132,7 @@ def _load_product_form_context(product=None):
             'id': brand.id,
             'name': brand.name,
             'is_active': brand.is_active,
+            'selected': bool(product and product.brand_id == brand.id),
         })
     return {
         'product': product,
@@ -140,6 +164,7 @@ def _assign_product_form_data(product):
     product.is_new = _parse_bool('is_new')
     product.is_active = _parse_bool('is_active')
     product.redirect_to_whatsapp = _parse_bool('redirect_to_whatsapp')
+    _sync_product_flavors(product, request.form.get('flavors'))
 
 
 @admin_bp.route('/products/<int:product_id>/duplicate', methods=['POST'])
@@ -183,6 +208,13 @@ def duplicate_product(product_id):
             name=variation.name,
             value=variation.value,
             stock=variation.stock,
+        ))
+
+    for flavor in product.flavors:
+        db.session.add(ProductFlavor(
+            product_id=duplicated_product.id,
+            name=flavor.name,
+            display_order=flavor.display_order,
         ))
 
     db.session.commit()

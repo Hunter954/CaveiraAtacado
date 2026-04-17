@@ -22,6 +22,14 @@
       <small class="hint">As marcas aparecem automaticamente conforme a categoria escolhida.</small>
     </label>
 
+    <label>
+      <span>Sabores</span>
+      <input type="text" id="flavor_input" data-flavor-input placeholder="Digite um sabor e pressione Enter">
+      <input type="hidden" name="flavors" data-flavor-hidden value="{{ product.flavors|map(attribute='name')|join('\n') if product else '' }}">
+      <div class="flavor-badge-editor" data-flavor-list></div>
+      <small class="hint">Pressione Enter para adicionar cada sabor como badge. Você também pode colar vários sabores separados por vírgula.</small>
+    </label>
+
     <input name="name" placeholder="Nome" value="{{ product.name if product else '' }}" required>
     <input name="sku" placeholder="SKU" value="{{ product.sku if product else '' }}" required>
     <input name="short_description" placeholder="Descrição curta" value="{{ product.short_description if product else '' }}">

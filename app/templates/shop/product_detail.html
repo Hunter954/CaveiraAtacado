@@ -15,6 +15,16 @@
       {% if product.promotional_price %}<span>R$ {{ product.price|brl_currency }}</span>{% endif %}
     </div>
     <p>Estoque disponível: {{ product.stock }}</p>
+    {% if product.flavors %}
+    <div class="product-flavors">
+      <p class="product-flavors-title">Sabor:</p>
+      <div class="flavor-badge-list">
+        {% for flavor in product.flavors %}
+        <span class="flavor-badge">{{ flavor.name }}</span>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
 
     {% if product.requires_whatsapp_redirect %}
     <div class="whatsapp-purchase-box">

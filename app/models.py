@@ -110,6 +110,7 @@ class Product(TimestampMixin, db.Model):
 
     images = db.relationship('ProductImage', backref='product', lazy=True, cascade='all, delete-orphan')
     variations = db.relationship('ProductVariation', backref='product', lazy=True, cascade='all, delete-orphan')
+    flavors = db.relationship('ProductFlavor', backref='product', lazy=True, cascade='all, delete-orphan', order_by='ProductFlavor.display_order.asc(), ProductFlavor.name.asc()')
 
     @property
     def final_price(self):
@@ -134,6 +135,15 @@ class ProductVariation(TimestampMixin, db.Model):
     name = db.Column(db.String(80), nullable=False)
     value = db.Column(db.String(80), nullable=False)
     stock = db.Column(db.Integer, default=0)
+
+
+class ProductFlavor(TimestampMixin, db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    product_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=False, index=True)
+    name = db.Column(db.String(80), nullable=False)
+    display_order = db.Column(db.Integer, default=0)
+
+    __table_args__ = (db.UniqueConstraint('product_id', 'name', name='uq_product_flavor_name'),)
 
 
 class Coupon(TimestampMixin, db.Model):

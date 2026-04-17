@@ -39,6 +39,15 @@ def bootstrap_database(app):
         if 'redirect_to_whatsapp' not in product_columns:
             db.session.execute(text('ALTER TABLE product ADD COLUMN redirect_to_whatsapp BOOLEAN DEFAULT FALSE'))
             db.session.execute(text('UPDATE product SET redirect_to_whatsapp = FALSE WHERE redirect_to_whatsapp IS NULL'))
+
+        inspector = inspect(db.engine)
+        existing_tables = set(inspector.get_table_names())
+        expected_tables = set(db.metadata.tables.keys())
+        missing_tables = expected_tables.difference(existing_tables)
+        if missing_tables:
+            logger.info('Criando novas tabelas apos ajustes: %s', ', '.join(sorted(missing_tables)))
+            db.create_all()
+
         db.session.commit()
 
         if auto_seed:
