@@ -37,7 +37,8 @@ def bootstrap_database(app):
         if 'brand_id' not in product_columns:
             db.session.execute(text('ALTER TABLE product ADD COLUMN brand_id INTEGER'))
         if 'redirect_to_whatsapp' not in product_columns:
-            db.session.execute(text('ALTER TABLE product ADD COLUMN redirect_to_whatsapp BOOLEAN DEFAULT 0'))
+            db.session.execute(text('ALTER TABLE product ADD COLUMN redirect_to_whatsapp BOOLEAN DEFAULT FALSE'))
+            db.session.execute(text('UPDATE product SET redirect_to_whatsapp = FALSE WHERE redirect_to_whatsapp IS NULL'))
         db.session.commit()
 
         if auto_seed:
