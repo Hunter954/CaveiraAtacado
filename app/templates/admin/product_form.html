@@ -17,9 +17,9 @@
     <label>
       <span>Marca</span>
       <select name="brand_id" id="brand_id" data-brand-select data-selected-brand="{{ product.brand_id if product and product.brand_id else '' }}">
-        <option value="">Selecione uma marca</option>
+        <option value="">Selecione primeiro uma categoria</option>
       </select>
-      <small class="hint">As marcas são cadastradas dentro de cada categoria.</small>
+      <small class="hint">As marcas aparecem automaticamente conforme a categoria escolhida.</small>
     </label>
 
     <input name="name" placeholder="Nome" value="{{ product.name if product else '' }}" required>
@@ -48,5 +48,8 @@
 {% block scripts %}
 <script>
   window.productBrandsByCategory = {{ brands_by_category|tojson }};
+  if (typeof window.hydrateBrandSelect === 'function') {
+    window.hydrateBrandSelect();
+  }
 </script>
 {% endblock %}

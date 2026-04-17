@@ -24,30 +24,47 @@ function hydrateBrandSelect(){
   if(!categorySelect || !brandSelect) return;
 
   const renderBrands = () => {
-    const selectedCategory = categorySelect.value;
-    const selectedBrand = brandSelect.dataset.selectedBrand || brandSelect.value;
+    const selectedCategory = String(categorySelect.value || '');
+    const selectedBrand = String(brandSelect.dataset.selectedBrand || brandSelect.value || '');
     const brands = brandsByCategory[selectedCategory] || [];
+
+    if(!selectedCategory){
+      brandSelect.innerHTML = '<option value="">Selecione primeiro uma categoria</option>';
+      brandSelect.disabled = true;
+      return;
+    }
+
     brandSelect.innerHTML = '<option value="">Selecione uma marca</option>';
-    brands.forEach((brand) => {
-      if(brand.is_active === false) return;
+    const activeBrands = brands.filter((brand) => brand.is_active !== false);
+
+    activeBrands.forEach((brand) => {
       const option = document.createElement('option');
       option.value = brand.id;
       option.textContent = brand.name;
-      if(String(brand.id) === String(selectedBrand)) {
+      if(String(brand.id) === selectedBrand) {
         option.selected = true;
       }
       brandSelect.appendChild(option);
     });
+
+    if(activeBrands.length === 0){
+      brandSelect.innerHTML = '<option value="">Nenhuma marca cadastrada para esta categoria</option>';
+    }
+
     brandSelect.dataset.selectedBrand = '';
-    brandSelect.disabled = brands.length === 0;
+    brandSelect.disabled = activeBrands.length === 0;
   };
 
+  categorySelect.removeEventListener?.('change', renderBrands);
   categorySelect.addEventListener('change', () => {
     brandSelect.dataset.selectedBrand = '';
     renderBrands();
   });
+
   renderBrands();
 }
+
+window.hydrateBrandSelect = hydrateBrandSelect;
 
 document.querySelectorAll('[data-cep]').forEach(input => {
   input.addEventListener('blur', () => fillAddressByCep(input));

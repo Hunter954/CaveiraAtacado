@@ -2,79 +2,101 @@
 {% block content %}
 <section class="container section">
   <div class="checkout-layout admin-category-layout">
-    <form method="post" class="card form-card">
-      {% if editing_category %}
-      <input type="hidden" name="category_id" value="{{ editing_category.id }}">
-      {% endif %}
+    <div class="card form-card">
+      <form method="post">
+        {% if editing_category %}
+        <input type="hidden" name="category_id" value="{{ editing_category.id }}">
+        {% endif %}
 
-      <h1>{{ 'Editar categoria' if editing_category else 'Nova categoria' }}</h1>
-      <input name="name" placeholder="Nome" value="{{ editing_category.name if editing_category else '' }}" required>
-      <textarea name="description" placeholder="Descrição">{{ editing_category.description if editing_category else '' }}</textarea>
-      <input name="display_order" type="number" placeholder="Ordem" value="{{ editing_category.display_order if editing_category else 0 }}">
-      <label class="checkbox"><input type="checkbox" name="is_active" {% if not editing_category or editing_category.is_active %}checked{% endif %}> Ativa</label>
-      <button class="btn btn-full">{{ 'Atualizar' if editing_category else 'Salvar' }}</button>
-      {% if editing_category %}
-      <a href="{{ url_for('admin.categories') }}" style="text-align:center;">Cancelar edição</a>
-      {% endif %}
-    </form>
+        <h1>{{ 'Editar categoria' if editing_category else 'Nova categoria' }}</h1>
+        <input name="name" placeholder="Nome da categoria" value="{{ editing_category.name if editing_category else '' }}" required>
+        <textarea name="description" placeholder="Descrição">{{ editing_category.description if editing_category else '' }}</textarea>
+        <input name="display_order" type="number" placeholder="Ordem" value="{{ editing_category.display_order if editing_category else 0 }}">
+        <label class="checkbox"><input type="checkbox" name="is_active" {% if not editing_category or editing_category.is_active %}checked{% endif %}> Ativa</label>
+        <button class="btn btn-full">{{ 'Atualizar categoria' if editing_category else 'Salvar categoria' }}</button>
+        {% if editing_category %}
+        <a href="{{ url_for('admin.categories') }}" style="text-align:center;">Cancelar edição</a>
+        {% endif %}
+      </form>
+    </div>
 
-    <div class="card">
-      <h3>Categorias e marcas</h3>
-      {% for c in categories %}
-      <div class="category-block">
-        <div class="category-header-row">
+    <div class="card form-card">
+      <form method="post">
+        <input type="hidden" name="form_type" value="brand">
+        {% if editing_brand %}
+        <input type="hidden" name="brand_id" value="{{ editing_brand.id }}">
+        {% endif %}
+
+        <h2>{{ 'Editar marca' if editing_brand else 'Nova marca' }}</h2>
+        <label>
+          <span>Categoria da marca</span>
+          <select name="brand_category_id" required>
+            <option value="">Selecione a categoria</option>
+            {% for c in categories %}
+            <option value="{{ c.id }}" {% if editing_brand and editing_brand.category_id == c.id %}selected{% endif %}>{{ c.name }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <input name="brand_name" placeholder="Nome da marca" value="{{ editing_brand.name if editing_brand else '' }}" required>
+        <label class="checkbox"><input type="checkbox" name="brand_is_active" {% if not editing_brand or editing_brand.is_active %}checked{% endif %}> Ativa</label>
+        <button class="btn btn-full">{{ 'Atualizar marca' if editing_brand else 'Salvar marca' }}</button>
+        <p class="hint" style="margin-top:10px;">Depois de salvar a marca aqui, ela aparece no cadastro do produto quando você escolher a categoria correspondente.</p>
+        {% if editing_brand %}
+        <a href="{{ url_for('admin.categories') }}" style="text-align:center;">Cancelar edição da marca</a>
+        {% endif %}
+      </form>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:24px;">
+    <h3>Categorias e marcas cadastradas</h3>
+    {% for c in categories %}
+    <div class="category-block">
+      <div class="category-header-row">
+        <div>
+          <strong>{{ c.display_order }} · {{ c.name }}</strong>
+          {% if c.description %}<p style="margin:6px 0 0;">{{ c.description }}</p>{% endif %}
+        </div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;">
+          <a href="{{ url_for('admin.categories', edit=c.id) }}"><i class="bi bi-pencil-square"></i> Editar categoria</a>
+          <form method="post" action="{{ url_for('admin.delete_category', category_id=c.id) }}" onsubmit="return confirm('Deseja excluir esta categoria?');">
+            <button type="submit" style="background:none;border:none;padding:0;color:#dc3545;cursor:pointer;">
+              <i class="bi bi-trash"></i> Excluir categoria
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <div class="brand-chip-list">
+        {% for brand in c.brands %}
+        <span class="brand-chip">{{ brand.name }}{% if not brand.is_active %} · inativa{% endif %}</span>
+        {% else %}
+        <span class="hint">Nenhuma marca cadastrada nesta categoria.</span>
+        {% endfor %}
+      </div>
+
+      {% if c.brands %}
+      <div class="brand-admin-list">
+        {% for brand in c.brands %}
+        <div class="brand-admin-item" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
           <div>
-            <strong>{{ c.display_order }} · {{ c.name }}</strong>
-            {% if c.description %}<p style="margin:6px 0 0;">{{ c.description }}</p>{% endif %}
+            <strong>{{ brand.name }}</strong>
+            <div class="hint">{{ 'Ativa' if brand.is_active else 'Inativa' }}</div>
           </div>
-          <div style="display:flex;gap:12px;flex-wrap:wrap;">
-            <a href="{{ url_for('admin.categories', edit=c.id) }}"><i class="bi bi-pencil-square"></i> Editar</a>
-            <form method="post" action="{{ url_for('admin.delete_category', category_id=c.id) }}" onsubmit="return confirm('Deseja excluir esta categoria?');">
-              <button type="submit" style="background:none;border:none;padding:0;color:#dc3545;cursor:pointer;">
-                <i class="bi bi-trash"></i> Excluir
-              </button>
+          <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
+            <a href="{{ url_for('admin.categories', edit_brand=brand.id) }}"><i class="bi bi-pencil-square"></i> Editar marca</a>
+            <form method="post" action="{{ url_for('admin.delete_brand', brand_id=brand.id) }}" onsubmit="return confirm('Deseja excluir esta marca?');">
+              <button type="submit" class="btn-link btn-link-danger">Excluir marca</button>
             </form>
           </div>
         </div>
-
-        <div class="brand-chip-list">
-          {% for brand in c.brands %}
-          <span class="brand-chip">{{ brand.name }}{% if not brand.is_active %} · inativa{% endif %}</span>
-          {% else %}
-          <span class="hint">Nenhuma marca cadastrada nesta categoria.</span>
-          {% endfor %}
-        </div>
-
-        <form method="post" class="brand-inline-form">
-          <input type="hidden" name="form_type" value="brand">
-          <input type="hidden" name="category_id" value="{{ c.id }}">
-          <input type="text" name="name" placeholder="Nova marca para {{ c.name }}" required>
-          <label class="checkbox"><input type="checkbox" name="is_active" checked> Ativa</label>
-          <button class="btn btn-secondary" type="submit">Salvar marca</button>
-        </form>
-
-        {% if c.brands %}
-        <div class="brand-admin-list">
-          {% for brand in c.brands %}
-          <form method="post" class="brand-admin-item">
-            <input type="hidden" name="form_type" value="brand">
-            <input type="hidden" name="brand_id" value="{{ brand.id }}">
-            <input type="hidden" name="category_id" value="{{ c.id }}">
-            <input type="text" name="name" value="{{ brand.name }}" required>
-            <label class="checkbox"><input type="checkbox" name="is_active" {% if brand.is_active %}checked{% endif %}> Ativa</label>
-            <button class="btn btn-secondary" type="submit">Atualizar</button>
-          </form>
-          <form method="post" action="{{ url_for('admin.delete_brand', brand_id=brand.id) }}" onsubmit="return confirm('Deseja excluir esta marca?');">
-            <button type="submit" class="btn-link btn-link-danger">Excluir marca</button>
-          </form>
-          {% endfor %}
-        </div>
-        {% endif %}
+        {% endfor %}
       </div>
-      {% else %}
-      <p>Nenhuma categoria cadastrada.</p>
-      {% endfor %}
+      {% endif %}
     </div>
+    {% else %}
+    <p>Nenhuma categoria cadastrada.</p>
+    {% endfor %}
   </div>
 </section>
 {% endblock %}

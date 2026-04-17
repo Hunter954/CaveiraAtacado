@@ -233,21 +233,24 @@ def edit_product(product_id):
 @admin_required
 def categories():
     editing_category = None
+    editing_brand = None
 
     if request.method == 'POST':
         form_type = request.form.get('form_type', 'category')
         if form_type == 'brand':
-            category_id = request.form.get('category_id', type=int)
+            category_id = request.form.get('brand_category_id', type=int) or request.form.get('category_id', type=int)
             brand_id = request.form.get('brand_id', type=int)
             category = Category.query.get_or_404(category_id)
             if brand_id:
                 brand = Brand.query.get_or_404(brand_id)
-                brand.name = request.form['name']
-                brand.slug = slugify(request.form['name'])
-                brand.is_active = _parse_bool('is_active')
+                brand.category_id = category.id
+                brand.name = request.form['brand_name'] if request.form.get('brand_name') is not None else request.form['name']
+                brand.slug = slugify(brand.name)
+                brand.is_active = _parse_bool('brand_is_active') or _parse_bool('is_active')
                 flash(f'Marca atualizada em {category.name}.', 'success')
             else:
-                brand = Brand(category_id=category.id, name=request.form['name'], slug=slugify(request.form['name']), is_active=_parse_bool('is_active'))
+                brand_name = request.form['brand_name'] if request.form.get('brand_name') is not None else request.form['name']
+                brand = Brand(category_id=category.id, name=brand_name, slug=slugify(brand_name), is_active=_parse_bool('brand_is_active') or _parse_bool('is_active'))
                 db.session.add(brand)
                 flash(f'Marca criada em {category.name}.', 'success')
             db.session.commit()
@@ -280,8 +283,12 @@ def categories():
     if edit_id:
         editing_category = Category.query.get_or_404(edit_id)
 
+    edit_brand_id = request.args.get('edit_brand', type=int)
+    if edit_brand_id:
+        editing_brand = Brand.query.get_or_404(edit_brand_id)
+
     categories = Category.query.order_by(Category.display_order.asc(), Category.name.asc()).all()
-    return render_template('admin/categories.html', categories=categories, editing_category=editing_category)
+    return render_template('admin/categories.html', categories=categories, editing_category=editing_category, editing_brand=editing_brand)
 
 
 @admin_bp.route('/brands/<int:brand_id>/delete', methods=['POST'])
