@@ -3,7 +3,7 @@ import os
 from decimal import Decimal
 from datetime import datetime, timedelta
 from urllib.parse import quote
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify, current_app, send_from_directory
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify, current_app, send_from_directory, Response
 from flask_login import login_user, logout_user, login_required, current_user
 from .extensions import db
 from .models import User, Category, Product, ProductImage, Cart, CartItem, Coupon, Order, OrderItem, UserAddress, PasswordReset, OrderStatusLog, HomeBanner, Brand, get_site_setting
@@ -21,6 +21,104 @@ checkout_bp = Blueprint('checkout', __name__)
 user_bp = Blueprint('user', __name__)
 webhook_bp = Blueprint('webhooks', __name__)
 
+
+
+
+def base_site_url():
+    return current_app.config.get('BASE_URL', request.url_root.rstrip('/')).rstrip('/')
+
+
+def absolute_url(path_or_url):
+    if not path_or_url:
+        return None
+    if path_or_url.startswith(('http://', 'https://')):
+        return path_or_url
+    if path_or_url.startswith('/'):
+        return f"{base_site_url()}{path_or_url}"
+    return f"{base_site_url()}/{path_or_url.lstrip('/')}"
+
+
+def strip_html_whitespace(text):
+    return ' '.join((text or '').split())
+
+
+def truncate_text(text, limit=160):
+    cleaned = strip_html_whitespace(text)
+    if len(cleaned) <= limit:
+        return cleaned
+    return cleaned[: limit - 3].rstrip(' ,.-') + '...'
+
+
+def category_intro(category):
+    custom = strip_html_whitespace(category.description)
+    if custom:
+        return custom
+    return f"Compre {category.name.lower()} no atacado com produtos originais, estoque atualizado e variedade para revenda."
+
+
+def product_primary_image(product):
+    if product.images:
+        return absolute_url(normalize_media_url(product.images[0].image_path))
+    return 'https://placehold.co/700x700/111111/ff2a2a?text=Caveira'
+
+
+def product_meta_description(product):
+    brand = f" da marca {product.brand.name}" if product.brand else ''
+    category = f" na categoria {product.category.name}" if product.category else ''
+    short = product.short_description or product.description or ''
+    return truncate_text(f"Compre {product.name}{brand}{category} na Caveira Atacado. {short}", 158)
+
+
+def build_breadcrumbs(items):
+    data = []
+    for index, item in enumerate(items, start=1):
+        data.append({
+            '@type': 'ListItem',
+            'position': index,
+            'name': item['name'],
+            'item': item['url'],
+        })
+    return {
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        'itemListElement': data,
+    }
+
+
+def build_product_schema(product):
+    availability = 'https://schema.org/InStock' if (product.stock or 0) > 0 else 'https://schema.org/OutOfStock'
+    schema = {
+        '@context': 'https://schema.org',
+        '@type': 'Product',
+        'name': product.name,
+        'sku': product.sku,
+        'description': strip_html_whitespace(product.description or product.short_description or product.name),
+        'category': product.category.name if product.category else None,
+        'brand': {'@type': 'Brand', 'name': product.brand.name} if product.brand else None,
+        'image': [product_primary_image(product)],
+        'url': absolute_url(url_for('shop.product_detail', slug=product.slug)),
+        'offers': {
+            '@type': 'Offer',
+            'priceCurrency': 'BRL',
+            'price': str(product.final_price),
+            'availability': availability,
+            'url': absolute_url(url_for('shop.product_detail', slug=product.slug)),
+            'itemCondition': 'https://schema.org/NewCondition',
+        },
+    }
+    return {k: v for k, v in schema.items() if v is not None}
+
+
+def build_org_schema():
+    return {
+        '@context': 'https://schema.org',
+        '@type': 'Organization',
+        'name': 'Caveira Atacado',
+        'url': base_site_url(),
+        'logo': absolute_url(url_for('static', filename='img/logo.svg')),
+        'email': 'contato@caveiraatacado.com',
+        'sameAs': [],
+    }
 
 def normalize_media_url(path):
     if not path:
@@ -90,6 +188,11 @@ def inject_globals():
         'cart_count': cart_count,
         'site_whatsapp_number': ''.join(char for char in (get_site_setting().whatsapp_number or '') if char.isdigit()),
         'build_whatsapp_link': build_whatsapp_link,
+        'site_base_url': base_site_url(),
+        'default_meta_title': 'Caveira Atacado | Pods e Pharma no atacado',
+        'default_meta_description': 'Caveira Atacado com pods, pharma e produtos originais para compra no atacado. Explore categorias, marcas e ofertas com foco em revenda.',
+        'organization_schema': build_org_schema(),
+        'current_url': request.base_url if request.query_string else request.url,
     }
 
 
@@ -99,14 +202,72 @@ def home():
     new_products = Product.query.filter_by(is_active=True, is_new=True).limit(8).all()
     categories = Category.query.filter_by(is_active=True).order_by(Category.display_order.asc()).all()
     banners = HomeBanner.query.filter_by(is_active=True).order_by(HomeBanner.display_order.asc(), HomeBanner.created_at.desc()).all()
-    return render_template('shop/home.html', featured_products=featured_products, new_products=new_products, categories=categories, banners=banners)
+    website_schema = {
+        '@context': 'https://schema.org',
+        '@type': 'WebSite',
+        'name': 'Caveira Atacado',
+        'url': base_site_url(),
+        'potentialAction': {
+            '@type': 'SearchAction',
+            'target': absolute_url(url_for('core.search')) + '?q={search_term_string}',
+            'query-input': 'required name=search_term_string',
+        },
+    }
+    item_list_schema = {
+        '@context': 'https://schema.org',
+        '@type': 'ItemList',
+        'name': 'Produtos em destaque',
+        'itemListElement': [
+            {
+                '@type': 'ListItem',
+                'position': index,
+                'url': absolute_url(url_for('shop.product_detail', slug=product.slug)),
+                'name': product.name,
+            }
+            for index, product in enumerate(featured_products, start=1)
+        ],
+    }
+    return render_template(
+        'shop/home.html',
+        featured_products=featured_products,
+        new_products=new_products,
+        categories=categories,
+        banners=banners,
+        meta_title='Caveira Atacado | Pods e Pharma no atacado',
+        meta_description='Caveira Atacado com pods, pharma e produtos originais para compra no atacado. Veja categorias, marcas e ofertas para revenda.',
+        canonical_url=absolute_url(url_for('core.home')),
+        json_ld=[build_org_schema(), website_schema, item_list_schema],
+    )
 
 
 @core_bp.route('/search')
 def search():
-    query = request.args.get('q', '')
-    products = Product.query.filter(Product.is_active.is_(True), Product.name.ilike(f'%{query}%')).all()
-    return render_template('shop/catalog.html', products=products, query=query, current_category=None, current_brand=None, available_brands=[])
+    query = request.args.get('q', '').strip()
+    products_query = Product.query.filter(Product.is_active.is_(True))
+    if query:
+        products_query = products_query.filter(
+            Product.name.ilike(f'%{query}%')
+            | Product.sku.ilike(f'%{query}%')
+            | Product.description.ilike(f'%{query}%')
+            | Product.short_description.ilike(f'%{query}%')
+        )
+    products = products_query.order_by(Product.created_at.desc()).all()
+    meta_title = f'Buscar por {query} | Caveira Atacado' if query else 'Buscar produtos | Caveira Atacado'
+    meta_description = truncate_text(f'Resultados para {query} em pods, pharma e produtos originais na Caveira Atacado.', 155) if query else 'Busque produtos por nome, SKU, categoria e marca na Caveira Atacado.'
+    return render_template(
+        'shop/catalog.html',
+        products=products,
+        query=query,
+        current_category=None,
+        current_brand=None,
+        available_brands=[],
+        meta_title=meta_title,
+        meta_description=meta_description,
+        canonical_url=absolute_url(url_for('core.search')) + (f'?q={quote(query)}' if query else ''),
+        page_heading=f'Resultados para: {query}' if query else 'Buscar produtos',
+        page_intro='Use a busca para encontrar produtos por nome, SKU e descrição.',
+        robots_meta='index,follow' if query else 'noindex,follow',
+    )
 
 
 @core_bp.route('/institucional/<page>')
@@ -121,6 +282,40 @@ def institutional(page):
     if page not in pages:
         return redirect(url_for('core.home'))
     return render_template('shop/institutional.html', title=pages[page], page=page)
+
+
+@core_bp.route('/robots.txt')
+def robots_txt():
+    content = f"User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /auth\nDisallow: /checkout\nDisallow: /cart\n\nSitemap: {absolute_url('/sitemap.xml')}\n"
+    return Response(content, mimetype='text/plain')
+
+
+@core_bp.route('/sitemap.xml')
+def sitemap_xml():
+    pages = [
+        {'loc': absolute_url(url_for('core.home')), 'lastmod': datetime.utcnow().date().isoformat(), 'priority': '1.0'},
+        {'loc': absolute_url(url_for('shop.catalog')), 'lastmod': datetime.utcnow().date().isoformat(), 'priority': '0.9'},
+    ]
+
+    for page in ['privacidade', 'termos', 'trocas', 'sobre', 'contato']:
+        pages.append({'loc': absolute_url(url_for('core.institutional', page=page)), 'lastmod': datetime.utcnow().date().isoformat(), 'priority': '0.4'})
+
+    for category in Category.query.filter_by(is_active=True).all():
+        pages.append({
+            'loc': absolute_url(url_for('shop.catalog', category=category.slug)),
+            'lastmod': (category.updated_at or category.created_at or datetime.utcnow()).date().isoformat(),
+            'priority': '0.8',
+        })
+
+    for product in Product.query.filter_by(is_active=True).all():
+        pages.append({
+            'loc': absolute_url(url_for('shop.product_detail', slug=product.slug)),
+            'lastmod': (product.updated_at or product.created_at or datetime.utcnow()).date().isoformat(),
+            'priority': '0.7',
+        })
+
+    xml = render_template('sitemap.xml', pages=pages)
+    return Response(xml, mimetype='application/xml')
 
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
@@ -216,15 +411,83 @@ def catalog():
         if current_brand:
             products = products.filter_by(brand_id=current_brand.id)
     if search_term:
-        products = products.filter(Product.name.ilike(f'%{search_term}%'))
+        products = products.filter(
+            Product.name.ilike(f'%{search_term}%')
+            | Product.sku.ilike(f'%{search_term}%')
+            | Product.description.ilike(f'%{search_term}%')
+            | Product.short_description.ilike(f'%{search_term}%')
+        )
     if sort == 'price_asc':
         products = products.order_by(Product.price.asc())
     elif sort == 'price_desc':
         products = products.order_by(Product.price.desc())
     else:
         products = products.order_by(Product.created_at.desc())
+    products = products.all()
     available_brands = current_category.brands if current_category else []
-    return render_template('shop/catalog.html', products=products.all(), current_category=current_category, current_brand=current_brand, available_brands=available_brands, query=search_term)
+
+    title_parts = ['Catálogo de produtos']
+    if current_category:
+        title_parts.insert(0, current_category.name)
+    if current_brand:
+        title_parts.insert(0, current_brand.name)
+    if search_term:
+        title_parts.insert(0, search_term)
+    meta_title = ' | '.join(title_parts) + ' | Caveira Atacado'
+
+    if current_brand and current_category:
+        page_heading = f'{current_brand.name} em {current_category.name}'
+        page_intro = f'Confira produtos {current_brand.name} na categoria {current_category.name.lower()} com foco em atacado e revenda.'
+    elif current_category:
+        page_heading = f'{current_category.name} no atacado'
+        page_intro = category_intro(current_category)
+    elif search_term:
+        page_heading = f'Resultados para: {search_term}'
+        page_intro = f'Produtos encontrados para {search_term} no atacado.'
+    else:
+        page_heading = 'Catálogo de produtos no atacado'
+        page_intro = 'Explore pods, pharma e produtos originais disponíveis para compra no atacado na Caveira Atacado.'
+
+    meta_description = truncate_text(page_intro + ' Navegue por categoria, marca e faixa de preço.', 158)
+
+    canonical_params = {}
+    if current_category:
+        canonical_params['category'] = current_category.slug
+    if current_brand:
+        canonical_params['brand'] = current_brand.slug
+    canonical_url = absolute_url(url_for('shop.catalog', **canonical_params))
+
+    breadcrumbs = [
+        {'name': 'Início', 'url': absolute_url(url_for('core.home'))},
+        {'name': 'Catálogo', 'url': absolute_url(url_for('shop.catalog'))},
+    ]
+    if current_category:
+        breadcrumbs.append({'name': current_category.name, 'url': absolute_url(url_for('shop.catalog', category=current_category.slug))})
+    if current_brand:
+        breadcrumbs.append({'name': current_brand.name, 'url': absolute_url(url_for('shop.catalog', category=current_category.slug, brand=current_brand.slug))})
+
+    collection_schema = {
+        '@context': 'https://schema.org',
+        '@type': 'CollectionPage',
+        'name': page_heading,
+        'url': canonical_url,
+        'description': page_intro,
+    }
+
+    return render_template(
+        'shop/catalog.html',
+        products=products,
+        current_category=current_category,
+        current_brand=current_brand,
+        available_brands=available_brands,
+        query=search_term,
+        meta_title=meta_title,
+        meta_description=meta_description,
+        canonical_url=canonical_url,
+        page_heading=page_heading,
+        page_intro=page_intro,
+        json_ld=[collection_schema, build_breadcrumbs(breadcrumbs)],
+    )
 
 
 @shop_bp.route('/product/<slug>', methods=['GET', 'POST'])
@@ -234,7 +497,28 @@ def product_detail(slug):
     shipping_result = None
     if request.method == 'POST' and request.form.get('zipcode') and not product.requires_whatsapp_redirect:
         shipping_result = calculate_shipping(request.form['zipcode'])
-    return render_template('shop/product_detail.html', product=product, related_products=related_products, shipping_result=shipping_result, whatsapp_link=build_whatsapp_link(product))
+
+    breadcrumbs = [
+        {'name': 'Início', 'url': absolute_url(url_for('core.home'))},
+        {'name': 'Catálogo', 'url': absolute_url(url_for('shop.catalog'))},
+    ]
+    if product.category:
+        breadcrumbs.append({'name': product.category.name, 'url': absolute_url(url_for('shop.catalog', category=product.category.slug))})
+    breadcrumbs.append({'name': product.name, 'url': absolute_url(url_for('shop.product_detail', slug=product.slug))})
+
+    return render_template(
+        'shop/product_detail.html',
+        product=product,
+        related_products=related_products,
+        shipping_result=shipping_result,
+        whatsapp_link=build_whatsapp_link(product),
+        meta_title=f'{product.name} | {product.category.name if product.category else "Produto"} | Caveira Atacado',
+        meta_description=product_meta_description(product),
+        canonical_url=absolute_url(url_for('shop.product_detail', slug=product.slug)),
+        meta_image=product_primary_image(product),
+        og_type='product',
+        json_ld=[build_product_schema(product), build_breadcrumbs(breadcrumbs)],
+    )
 
 
 @cart_bp.route('/')

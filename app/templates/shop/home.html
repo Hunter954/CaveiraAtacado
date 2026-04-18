@@ -1,10 +1,10 @@
 {% extends 'base.html' %}
-{% block title %}Caveira Atacado{% endblock %}
 {% block content %}
 <section class="hero">
   <div class="container hero-grid">
     <aside class="hero-categories card">
-      <h3><i class="bi bi-grid"></i> Categorias</h3>
+      <h2><i class="bi bi-grid"></i> Categorias em destaque</h2>
+      <p class="mb-3">Atacado de pods, pharma e produtos originais com foco em variedade para revenda.</p>
       {% for category in categories %}
       <a href="{{ url_for('shop.catalog', category=category.slug) }}"><i class="bi bi-chevron-right"></i> {{ category.name }}</a>
       {% endfor %}
@@ -70,9 +70,9 @@
 
 <section class="container promo-wide card">
   <div>
-    <span class="tag">Novidades</span>
-    <h2>Produtos originais e seleção especial</h2>
-    <p>Trabalhamos com marcas reconhecidas e ofertas pensadas para conversão no atacado.</p>
+    <span class="tag">Atacado</span>
+    <h1>Pods e Pharma no atacado com produtos originais</h1>
+    <p>A Caveira Atacado reúne marcas reconhecidas, categorias estratégicas e páginas otimizadas para facilitar a descoberta dos produtos no Google e a conversão no site.</p>
     <a class="btn" href="{{ url_for('shop.catalog') }}"><i class="bi bi-bag-check"></i> Ver produtos</a>
   </div>
 </section>

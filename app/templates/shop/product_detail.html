@@ -1,11 +1,15 @@
 {% extends 'base.html' %}
-{% block title %}{{ product.name }} | Caveira Atacado{% endblock %}
 {% block content %}
 <section class="container section product-detail-grid">
   <div class="card">
     <img class="product-main-image" src="{{ media_url(product.images[0].image_path) if product.images else 'https://placehold.co/700x700/111111/ff2a2a?text=Caveira' }}" alt="{{ product.name }}">
   </div>
   <div class="card">
+    <nav aria-label="breadcrumb" class="mb-3 small">
+      <a href="{{ url_for('core.home') }}">Início</a>
+      {% if product.category %} / <a href="{{ url_for('shop.catalog', category=product.category.slug) }}">{{ product.category.name }}</a>{% endif %}
+      / <span>{{ product.name }}</span>
+    </nav>
     <span class="tag">SKU {{ product.sku }}</span>
     {% if product.brand %}<p class="product-meta-line">Marca: <strong>{{ product.brand.name }}</strong></p>{% endif %}
     <h1>{{ product.name }}</h1>
@@ -14,6 +18,7 @@
       <strong>R$ {{ product.final_price|brl_currency }}</strong>
       {% if product.promotional_price %}<span>R$ {{ product.price|brl_currency }}</span>{% endif %}
     </div>
+    <p>Categoria: <strong>{{ product.category.name if product.category else 'Produto' }}</strong></p>
     <p>Estoque disponível: {{ product.stock }}</p>
     {% if product.flavors %}
     <div class="product-flavors">

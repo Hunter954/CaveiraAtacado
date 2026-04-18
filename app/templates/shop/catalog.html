@@ -1,8 +1,10 @@
 {% extends 'base.html' %}
-{% block title %}Catálogo | Caveira Atacado{% endblock %}
 {% block content %}
 <section class="container section">
-  <div class="section-head"><h1>Catálogo de Produtos</h1></div>
+  <div class="section-head d-block mb-4">
+    <h1>{{ page_heading or 'Catálogo de Produtos' }}</h1>
+    <p class="mt-2 mb-0">{{ page_intro or 'Explore produtos disponíveis no atacado.' }}</p>
+  </div>
   <form class="filters card" method="get">
     <input type="text" name="q" value="{{ query or '' }}" placeholder="Buscar por nome ou SKU">
     <select name="category">
@@ -12,13 +14,25 @@
       {% endfor %}
     </select>
     <select name="sort">
-      <option value="recent">Mais recentes</option>
-      <option value="price_asc">Menor preço</option>
-      <option value="price_desc">Maior preço</option>
+      <option value="recent" {% if request.args.get('sort', 'recent') == 'recent' %}selected{% endif %}>Mais recentes</option>
+      <option value="price_asc" {% if request.args.get('sort') == 'price_asc' %}selected{% endif %}>Menor preço</option>
+      <option value="price_desc" {% if request.args.get('sort') == 'price_desc' %}selected{% endif %}>Maior preço</option>
     </select>
     <button class="btn">Filtrar</button>
   </form>
-  <div class="product-grid">
+
+  {% if available_brands %}
+  <div class="card mt-3 p-3">
+    <strong class="mb-2 d-block">Marcas relacionadas</strong>
+    <div class="d-flex flex-wrap gap-2">
+      {% for brand in available_brands %}
+      <a class="btn btn-secondary" href="{{ url_for('shop.catalog', category=current_category.slug, brand=brand.slug) }}">{{ brand.name }}</a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="product-grid mt-4">
     {% for product in products %}
       {% include 'shop/product_card.html' %}
     {% else %}
