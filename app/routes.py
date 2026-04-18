@@ -284,6 +284,11 @@ def institutional(page):
     return render_template('shop/institutional.html', title=pages[page], page=page)
 
 
+@core_bp.route('/googlebe8e0cab868cb5bc.html')
+def google_site_verification():
+    return send_from_directory(current_app.static_folder, 'googlebe8e0cab868cb5bc.html', mimetype='text/html')
+
+
 @core_bp.route('/robots.txt')
 def robots_txt():
     content = f"User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /auth\nDisallow: /checkout\nDisallow: /cart\n\nSitemap: {absolute_url('/sitemap.xml')}\n"
